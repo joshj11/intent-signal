@@ -123,8 +123,7 @@ export default function Settings() {
         >
           <input
             name="key"
-            defaultValue={settings?.crunchbase_api_key || ''}
-            placeholder="cb_live_..."
+            placeholder={settings?.crunchbase_api_key ? 'Key saved — enter a new value to replace' : 'cb_live_...'}
             className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
           <SaveButton saving={saving.crunchbase_api_key} saved={saved.crunchbase_api_key} />
@@ -148,8 +147,7 @@ export default function Settings() {
           <div className="flex gap-3">
             <input
               name="key"
-              defaultValue={settings?.proxycurl_api_key || ''}
-              placeholder="Leave blank for manual reminders"
+              placeholder={settings?.proxycurl_api_key ? 'Key saved — enter a new value to replace' : 'Leave blank for manual reminders'}
               className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
             <SaveButton saving={saving.proxycurl_api_key} saved={saved.proxycurl_api_key} />

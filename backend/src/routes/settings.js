@@ -3,12 +3,17 @@ import supabase from '../lib/supabase.js'
 
 const router = Router()
 
-// GET /api/settings — returns all settings as a flat object
+// GET /api/settings — returns all settings as a flat object.
+// API key values are masked: returns true if set, null if not.
 router.get('/', async (req, res) => {
   const { data, error } = await supabase.from('settings').select('*')
   if (error) return res.status(500).json({ error: error.message })
 
-  const flat = Object.fromEntries(data.map((row) => [row.key, row.value]))
+  const flat = Object.fromEntries(data.map((row) => {
+    const isApiKey = row.key.endsWith('_api_key')
+    const value = isApiKey ? (row.value && row.value !== 'null' ? true : null) : row.value
+    return [row.key, value]
+  }))
   res.json(flat)
 })
 
