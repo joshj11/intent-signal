@@ -1,0 +1,56 @@
+const BASE = import.meta.env.VITE_API_URL || ''
+
+async function request(path, options = {}) {
+  const res = await fetch(`${BASE}${path}`, {
+    headers: { 'Content-Type': 'application/json', ...options.headers },
+    ...options,
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }))
+    throw new Error(err.error || 'Request failed')
+  }
+
+  if (res.status === 204) return null
+  return res.json()
+}
+
+// Accounts
+export const api = {
+  accounts: {
+    list: () => request('/api/accounts'),
+    get: (id) => request(`/api/accounts/${id}`),
+    create: (body) => request('/api/accounts', { method: 'POST', body }),
+    update: (id, body) => request(`/api/accounts/${id}`, { method: 'PATCH', body }),
+    delete: (id) => request(`/api/accounts/${id}`, { method: 'DELETE' }),
+    bulk: (accounts) => request('/api/accounts/bulk', { method: 'POST', body: { accounts } }),
+    bulkUpdate: (ids, updates) => request('/api/accounts/bulk', { method: 'PATCH', body: { ids, updates } }),
+    bulkDelete: (ids) => request('/api/accounts/bulk', { method: 'DELETE', body: { ids } }),
+    scan: (id) => request(`/api/accounts/${id}/scan`, { method: 'POST' }),
+  },
+  contacts: {
+    list: (accountId) =>
+      request(`/api/contacts${accountId ? `?account_id=${accountId}` : ''}`),
+    create: (body) => request('/api/contacts', { method: 'POST', body }),
+    update: (id, body) => request(`/api/contacts/${id}`, { method: 'PATCH', body }),
+    delete: (id) => request(`/api/contacts/${id}`, { method: 'DELETE' }),
+  },
+  signals: {
+    list: (params = {}) => {
+      const qs = new URLSearchParams(params).toString()
+      return request(`/api/signals${qs ? `?${qs}` : ''}`)
+    },
+    alert: (id) => request(`/api/signals/${id}/alert`, { method: 'POST' }),
+    ignore: (id) => request(`/api/signals/${id}/ignore`, { method: 'POST' }),
+  },
+  settings: {
+    get: () => request('/api/settings'),
+    update: (key, value) => request(`/api/settings/${key}`, { method: 'PATCH', body: { value } }),
+  },
+  runSignals: () => request('/api/run-signals', { method: 'POST' }),
+  scanAll: () => request('/api/scan/all', { method: 'POST', body: { confirm: true } }),
+  coverage: {
+    careers: () => request('/api/coverage/careers'),
+  },
+}

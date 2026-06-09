@@ -1,0 +1,57 @@
+import 'dotenv/config'
+import express from 'express'
+import cors from 'cors'
+import cron from 'node-cron'
+
+import accountsRouter from './routes/accounts.js'
+import contactsRouter from './routes/contacts.js'
+import signalsRouter from './routes/signals.js'
+import settingsRouter from './routes/settings.js'
+import coverageRouter from './routes/coverage.js'
+import scanRouter from './routes/scan.js'
+import { scanAllAccounts } from './jobs/accountScanner.js'
+import log from './lib/logger.js'
+
+const app = express()
+
+app.use(cors({ origin: process.env.FRONTEND_URL || '*' }))
+app.use(express.json())
+
+// ─── Routes ──────────────────────────────────────────────────────────────────
+app.use('/api/accounts', accountsRouter)
+app.use('/api/contacts', contactsRouter)
+app.use('/api/signals', signalsRouter)
+app.use('/api/settings', settingsRouter)
+app.use('/api/coverage', coverageRouter)
+app.use('/api/scan', scanRouter)
+
+// Legacy manual trigger — kept for backwards compatibility / admin use
+app.post('/api/run-signals', async (req, res) => {
+  try {
+    const result = await scanAllAccounts()
+    res.json({ fired: result.signals_found, ...result })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.get('/health', (_req, res) => res.json({ ok: true }))
+
+// ─── Cron ─────────────────────────────────────────────────────────────────────
+// Monday 7am UTC — full sweep of all active accounts across all 11 detectors.
+// Sorted by closed_lost_at ASC (oldest deals first). Silent — no user notifications.
+cron.schedule('0 7 * * 1', () => {
+  const run_at = new Date().toISOString()
+  log.info({ run_at }, '[cron] weekly scan started')
+  scanAllAccounts()
+    .then(({ accounts_scanned, signals_found, proxycurl_credits_used, proxycurl_skipped, errors }) => {
+      log.info(
+        { run_at, accounts_scanned, signals_found, proxycurl_credits_used, proxycurl_skipped, errors: errors?.length ?? 0 },
+        '[cron] weekly scan complete'
+      )
+    })
+    .catch((err) => log.error({ err: err.message }, '[cron] weekly scan failed'))
+})
+
+const PORT = process.env.PORT || 3001
+app.listen(PORT, () => log.info({ port: PORT }, 'Signal backend running'))
