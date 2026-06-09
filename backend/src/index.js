@@ -9,6 +9,7 @@ import signalsRouter from './routes/signals.js'
 import settingsRouter from './routes/settings.js'
 import coverageRouter from './routes/coverage.js'
 import scanRouter from './routes/scan.js'
+import { requireAuth } from './middleware/auth.js'
 import { scanAllAccounts } from './jobs/accountScanner.js'
 import log from './lib/logger.js'
 
@@ -18,12 +19,12 @@ app.use(cors({ origin: process.env.FRONTEND_URL || '*' }))
 app.use(express.json())
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
-app.use('/api/accounts', accountsRouter)
-app.use('/api/contacts', contactsRouter)
-app.use('/api/signals', signalsRouter)
-app.use('/api/settings', settingsRouter)
-app.use('/api/coverage', coverageRouter)
-app.use('/api/scan', scanRouter)
+app.use('/api/accounts', requireAuth, accountsRouter)
+app.use('/api/contacts', requireAuth, contactsRouter)
+app.use('/api/signals', requireAuth, signalsRouter)
+app.use('/api/settings', requireAuth, settingsRouter)
+app.use('/api/coverage', requireAuth, coverageRouter)
+app.use('/api/scan', requireAuth, scanRouter)
 
 // Legacy manual trigger — kept for backwards compatibility / admin use
 app.post('/api/run-signals', async (req, res) => {

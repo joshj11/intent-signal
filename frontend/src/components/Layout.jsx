@@ -1,4 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext.jsx'
+import { supabase } from '../lib/supabaseClient.js'
 
 const navItems = [
   { to: '/accounts', label: 'Accounts' },
@@ -8,12 +10,14 @@ const navItems = [
 ]
 
 export default function Layout() {
+  const { user } = useAuth()
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center gap-8">
           <span className="font-semibold text-gray-900 tracking-tight">Signal</span>
-          <nav className="flex gap-1">
+          <nav className="flex gap-1 flex-1">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -30,6 +34,15 @@ export default function Layout() {
               </NavLink>
             ))}
           </nav>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-gray-400 hidden sm:block">{user?.email}</span>
+            <button
+              onClick={() => supabase.auth.signOut()}
+              className="text-xs text-gray-500 hover:text-gray-900 font-medium"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8">
