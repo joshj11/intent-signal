@@ -57,6 +57,14 @@ export const api = {
     get: () => request('/api/settings'),
     update: (key, value) => request(`/api/settings/${key}`, { method: 'PATCH', body: { value } }),
   },
+  investorProspects: {
+    list: () => request('/api/investor-prospects'),
+    create: (body) => request('/api/investor-prospects', { method: 'POST', body }),
+    bulk: (prospects) => request('/api/investor-prospects/bulk', { method: 'POST', body: { prospects } }),
+    update: (id, body) => request(`/api/investor-prospects/${id}`, { method: 'PATCH', body }),
+    delete: (id) => request(`/api/investor-prospects/${id}`, { method: 'DELETE' }),
+    recheck: () => request('/api/investor-prospects/recheck', { method: 'POST' }),
+  },
   runSignals: () => request('/api/run-signals', { method: 'POST' }),
   scanAll: () => request('/api/scan/all', { method: 'POST', body: { confirm: true } }),
   coverage: {

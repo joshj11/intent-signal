@@ -1,6 +1,8 @@
 import { Router } from 'express'
 import supabase from '../lib/supabase.js'
 import { scanAccount } from '../jobs/accountScanner.js'
+import { enrichImportedAccounts } from '../lib/sharedInvestorEnrich.js'
+import log from '../lib/logger.js'
 
 const router = Router()
 
@@ -65,6 +67,11 @@ router.post('/bulk', async (req, res) => {
   const { data, error } = await supabase.from('accounts').insert(toInsert).select()
   if (error) return res.status(500).json({ error: error.message })
 
+  // Enrich in background — never blocks the import response
+  enrichImportedAccounts(data).catch((err) =>
+    log.warn({ err: err.message }, '[bulk] shared investor enrichment failed')
+  )
+
   res.json({ inserted: data.length, skipped: accounts.length - data.length })
 })
 
@@ -84,6 +91,12 @@ router.post('/', async (req, res) => {
     .single()
 
   if (error) return res.status(500).json({ error: error.message })
+
+  // Enrich in background — never blocks the response
+  enrichImportedAccounts([data]).catch((err) =>
+    log.warn({ err: err.message }, '[accounts] shared investor enrichment failed')
+  )
+
   res.status(201).json(data)
 })
 

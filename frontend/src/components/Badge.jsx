@@ -7,6 +7,7 @@ const colorMap = {
   red: 'bg-red-50 text-red-700 ring-red-200',
   orange: 'bg-orange-50 text-orange-700 ring-orange-200',
   purple: 'bg-purple-50 text-purple-700 ring-purple-200',
+  teal: 'bg-teal-50 text-teal-700 ring-teal-200',
   gray: 'bg-gray-100 text-gray-600 ring-gray-200',
 }
 

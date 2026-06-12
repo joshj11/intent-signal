@@ -7,6 +7,7 @@ import AccountDetail from './pages/AccountDetail.jsx'
 import SignalFeed from './pages/SignalFeed.jsx'
 import Settings from './pages/Settings.jsx'
 import Summary from './pages/Summary.jsx'
+import InvestorProspects from './pages/InvestorProspects.jsx'
 
 function ProtectedRoutes() {
   const { session } = useAuth()
@@ -67,6 +68,7 @@ function AppRoutes() {
         <Route path="accounts/:id" element={<AccountDetail />} />
         <Route path="signals" element={<SignalFeed />} />
         <Route path="summary" element={<Summary />} />
+        <Route path="investor-prospects" element={<InvestorProspects />} />
         <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>

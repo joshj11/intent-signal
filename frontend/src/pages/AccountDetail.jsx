@@ -215,6 +215,11 @@ export default function AccountDetail() {
                 </span>
               )}
             </div>
+            {account.has_shared_investor && account.shared_investor_names?.length > 0 && (
+              <p className="text-sm text-teal-700 mt-1">
+                Shared investors: {account.shared_investor_names.join(', ')}
+              </p>
+            )}
             {account.notes && (
               <p className="text-sm text-gray-500 mt-2 max-w-2xl">{account.notes}</p>
             )}

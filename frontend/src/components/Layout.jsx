@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabaseClient.js'
 const navItems = [
   { to: '/accounts', label: 'Accounts' },
   { to: '/signals', label: 'Signal Feed' },
+  { to: '/investor-prospects', label: 'Investor prospects' },
   { to: '/summary', label: 'How it works' },
   { to: '/settings', label: 'Settings' },
 ]
