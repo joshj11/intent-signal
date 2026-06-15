@@ -32,10 +32,10 @@ export default function Settings() {
   const [saving, setSaving] = useState({})
 
   useEffect(() => {
-    api.settings.get().then((data) => {
-      setSettings(data)
-      setLoading(false)
-    })
+    api.settings.get()
+      .then((data) => setSettings(data))
+      .catch(() => setSettings({}))
+      .finally(() => setLoading(false))
   }, [])
 
   async function save(key, value) {
