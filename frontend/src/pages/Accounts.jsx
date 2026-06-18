@@ -523,6 +523,7 @@ function TerritoryTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate, 
 export default function Accounts() {
   const [accounts, setAccounts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(null)
   const [activeTab, setActiveTab] = useState('closed_lost')
   const [showAdd, setShowAdd] = useState(false)
   const [showImport, setShowImport] = useState(false)
@@ -534,9 +535,12 @@ export default function Accounts() {
 
   const load = useCallback(async () => {
     setLoading(true)
+    setLoadError(null)
     try {
       const data = await api.accounts.list()
       setAccounts(data)
+    } catch (err) {
+      setLoadError(err.message)
     } finally {
       setLoading(false)
     }
@@ -584,6 +588,11 @@ export default function Accounts() {
 
   return (
     <div>
+      {loadError && (
+        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          Failed to load accounts: {loadError}
+        </div>
+      )}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Accounts</h1>
