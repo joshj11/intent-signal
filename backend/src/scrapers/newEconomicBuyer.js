@@ -5,6 +5,7 @@
 import axios from 'axios'
 import supabase from '../lib/supabase.js'
 import log from '../lib/logger.js'
+import { getSetting } from '../lib/settingsCache.js'
 import { getDetectorState, setDetectorState } from '../lib/detectorState.js'
 import { shouldAlertForAccount, isDuplicate } from '../lib/alertRules.js'
 
@@ -26,8 +27,8 @@ function adzunaBase() {
 }
 
 export async function checkForAccount(account, { recentSignals = [] } = {}) {
-  const appId = process.env.ADZUNA_APP_ID
-  const appKey = process.env.ADZUNA_APP_KEY
+  const appId = await getSetting('adzuna_app_id') || process.env.ADZUNA_APP_ID
+  const appKey = await getSetting('adzuna_app_key') || process.env.ADZUNA_APP_KEY
   if (!appId || !appKey) return []
 
   if (!shouldAlertForAccount({ account, contacts: account.contacts ?? [], signalType: SIGNAL_TYPE })) return []
@@ -93,10 +94,10 @@ export async function checkForAccount(account, { recentSignals = [] } = {}) {
 }
 
 export async function checkNewEconomicBuyer() {
-  const appId = process.env.ADZUNA_APP_ID
-  const appKey = process.env.ADZUNA_APP_KEY
+  const appId = await getSetting('adzuna_app_id') || process.env.ADZUNA_APP_ID
+  const appKey = await getSetting('adzuna_app_key') || process.env.ADZUNA_APP_KEY
   if (!appId || !appKey) {
-    log.warn(`[${DETECTOR}] ADZUNA_APP_ID / ADZUNA_APP_KEY not set, skipping`)
+    log.warn(`[${DETECTOR}] adzuna_app_id / adzuna_app_key not set, skipping`)
     return []
   }
 

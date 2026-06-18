@@ -20,8 +20,39 @@ function SaveButton({ saving, saved }) {
       disabled={saving}
       className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 disabled:opacity-50"
     >
-      {saving ? 'Saving...' : saved ? 'Saved' : 'Save'}
+      {saving ? 'Saving...' : saved ? 'Saved ✓' : 'Save'}
     </button>
+  )
+}
+
+function HowToGet({ steps }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="mt-2">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="text-xs text-brand-600 hover:underline"
+      >
+        {open ? 'Hide instructions' : 'How to get this key ↓'}
+      </button>
+      {open && (
+        <ol className="mt-2 space-y-1 list-decimal list-inside text-xs text-gray-500">
+          {steps.map((step, i) => (
+            <li key={i}>
+              {step.url ? (
+                <>
+                  {step.text}{' '}
+                  <a href={step.url} target="_blank" rel="noreferrer" className="text-brand-600 hover:underline">
+                    {step.linkText}
+                  </a>
+                </>
+              ) : step.text}
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
   )
 }
 
@@ -112,21 +143,101 @@ export default function Settings() {
       {/* Crunchbase */}
       <Section
         title="Crunchbase API"
-        description="Free tier: 200 calls/day. Used for funding round detection."
+        description="Detects new funding rounds at your accounts. Free tier: 200 calls/day."
       >
         <form
           onSubmit={(e) => {
             e.preventDefault()
             save('crunchbase_api_key', e.target.key.value || null)
           }}
-          className="flex gap-3"
+          className="space-y-2"
         >
-          <input
-            name="key"
-            placeholder={settings?.crunchbase_api_key ? 'Key saved — enter a new value to replace' : 'cb_live_...'}
-            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
-          />
-          <SaveButton saving={saving.crunchbase_api_key} saved={saved.crunchbase_api_key} />
+          <div className="flex gap-3">
+            <input
+              name="key"
+              placeholder={settings?.crunchbase_api_key ? 'Key saved — enter a new value to replace' : 'cb_live_...'}
+              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+            <SaveButton saving={saving.crunchbase_api_key} saved={saved.crunchbase_api_key} />
+          </div>
+          <HowToGet steps={[
+            { text: 'Go to', url: 'https://www.crunchbase.com/register', linkText: 'crunchbase.com/register' },
+            { text: 'Create a free account and verify your email.' },
+            { text: 'Visit', url: 'https://data.crunchbase.com/docs/using-the-api', linkText: 'data.crunchbase.com/docs' },
+            { text: 'Navigate to your profile → API Keys and copy your key.' },
+          ]} />
+        </form>
+      </Section>
+
+      {/* Perigon */}
+      <Section
+        title="Perigon News API"
+        description="Powers competitor bad-press and product-sunset signals. Free tier: 1,000 calls/month."
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            save('perigon_api_key', e.target.key.value || null)
+          }}
+          className="space-y-2"
+        >
+          <div className="flex gap-3">
+            <input
+              name="key"
+              placeholder={settings?.perigon_api_key ? 'Key saved — enter a new value to replace' : 'API key...'}
+              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+            <SaveButton saving={saving.perigon_api_key} saved={saved.perigon_api_key} />
+          </div>
+          <HowToGet steps={[
+            { text: 'Go to', url: 'https://www.goperigon.com/data-solutions/news-api', linkText: 'goperigon.com' },
+            { text: 'Click "Get started free" and create an account.' },
+            { text: 'In your dashboard, go to API Keys and copy your key.' },
+          ]} />
+        </form>
+      </Section>
+
+      {/* Adzuna */}
+      <Section
+        title="Adzuna Jobs API"
+        description="Detects when accounts hire senior finance or revenue leaders — a signal of new budget authority. Free tier: 1,000 calls/month."
+      >
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault()
+            const appId = e.target.app_id.value.trim()
+            const appKey = e.target.app_key.value.trim()
+            await save('adzuna_app_id', appId || null)
+            await save('adzuna_app_key', appKey || null)
+          }}
+          className="space-y-3"
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">App ID</label>
+              <input
+                name="app_id"
+                placeholder={settings?.adzuna_app_id ? 'Saved — enter to replace' : 'App ID'}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">App Key</label>
+              <input
+                name="app_key"
+                placeholder={settings?.adzuna_app_key ? 'Saved — enter to replace' : 'App Key'}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <HowToGet steps={[
+              { text: 'Go to', url: 'https://developer.adzuna.com/signup', linkText: 'developer.adzuna.com/signup' },
+              { text: 'Create a free account.' },
+              { text: 'Once approved, go to Dashboard → Your Apps to find your App ID and App Key.' },
+            ]} />
+            <SaveButton saving={saving.adzuna_app_id || saving.adzuna_app_key} saved={saved.adzuna_app_id && saved.adzuna_app_key} />
+          </div>
         </form>
       </Section>
 
@@ -157,6 +268,11 @@ export default function Settings() {
               ? 'Automated LinkedIn monitoring is enabled.'
               : 'Manual mode: Signal will prompt you to check champions\' LinkedIn profiles every 30 days.'}
           </p>
+          <HowToGet steps={[
+            { text: 'Go to', url: 'https://nubela.co/proxycurl', linkText: 'nubela.co/proxycurl' },
+            { text: 'Sign up and purchase credits (pay-as-you-go, ~$0.01/profile).' },
+            { text: 'Go to Dashboard → API Key and copy your key.' },
+          ]} />
         </form>
       </Section>
     </div>
