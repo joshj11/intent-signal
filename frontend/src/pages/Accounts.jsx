@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
+import { formatDistanceToNow } from 'date-fns'
 import { api } from '../lib/api.js'
 import { LOSS_REASONS, LOSS_REASON_COLORS } from '../lib/constants.js'
 import Badge from '../components/Badge.jsx'
@@ -10,6 +11,32 @@ import CareersGapModal from '../components/CareersGapModal.jsx'
 import Toast from '../components/Toast.jsx'
 
 const LOSS_REASON_LABELS = Object.fromEntries(LOSS_REASONS.map((r) => [r.value, r.label]))
+
+function ScanResultBanner({ result, onDismiss }) {
+  const hasWarnings = result.skipped?.length > 0
+  const hasErrors = result.errors?.length > 0
+  return (
+    <div className={`mb-5 rounded-xl border p-4 ${hasWarnings || hasErrors ? 'bg-amber-50 border-amber-200' : 'bg-green-50 border-green-200'}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1.5">
+          <p className="text-sm font-medium text-gray-900">
+            Scan complete — {result.accounts_scanned} account{result.accounts_scanned !== 1 ? 's' : ''} scanned, {result.signals_found} new signal{result.signals_found !== 1 ? 's' : ''} found
+          </p>
+          {hasWarnings && result.skipped.map((w) => (
+            <p key={w.label} className="text-xs text-amber-700">
+              ⚠ {w.label} key not set — {w.affects.join(', ')} signals skipped.{' '}
+              <a href="/settings" className="underline hover:no-underline">Add in Settings</a>
+            </p>
+          ))}
+          {hasErrors && (
+            <p className="text-xs text-red-600">⚠ {result.errors.length} account{result.errors.length !== 1 ? 's' : ''} failed to scan</p>
+          )}
+        </div>
+        <button onClick={onDismiss} className="text-gray-400 hover:text-gray-600 text-xs shrink-0 mt-0.5">Dismiss</button>
+      </div>
+    </div>
+  )
+}
 
 const DORMANCY_DAYS = 90
 
@@ -531,6 +558,8 @@ export default function Accounts() {
   const [careersGaps, setCareersGaps] = useState(null)
   const [showCareersGap, setShowCareersGap] = useState(false)
   const [scanning, setScanning] = useState(false)
+  const [scanResult, setScanResult] = useState(null)
+  const [lastScan, setLastScan] = useState(null)
   const [toast, setToast] = useState(null)
 
   const load = useCallback(async () => {
@@ -547,6 +576,10 @@ export default function Accounts() {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    api.scan.runs(1).then((runs) => setLastScan(runs[0] ?? null)).catch(() => {})
+  }, [])
 
   useEffect(() => {
     api.coverage.careers().then(setCareersGaps).catch(() => {})
@@ -571,9 +604,11 @@ export default function Accounts() {
   async function handleScanAll() {
     if (!confirm(`Scan all ${accounts.length} account${accounts.length !== 1 ? 's' : ''}? This may take a few minutes.`)) return
     setScanning(true)
+    setScanResult(null)
     try {
       const result = await api.scanAll()
-      setToast(`Scan complete — ${result.accounts_scanned} accounts scanned, ${result.signals_found} new signal${result.signals_found !== 1 ? 's' : ''} found`)
+      setScanResult(result)
+      setLastScan({ ran_at: new Date().toISOString(), ...result })
       await load()
     } catch (err) {
       setToast(`Scan failed: ${err.message}`)
@@ -598,6 +633,12 @@ export default function Accounts() {
           <h1 className="text-xl font-semibold text-gray-900">Accounts</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {closedLost.length} closed-lost · {territory.length} target accounts
+            {lastScan?.ran_at && (
+              <span className="text-gray-400">
+                {' '}· Last scan {formatDistanceToNow(new Date(lastScan.ran_at), { addSuffix: true })}
+                {lastScan.triggered_by === 'cron' && ' (auto)'}
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -636,6 +677,9 @@ export default function Accounts() {
           </button>
         </div>
       </div>
+
+      {/* Scan result banner */}
+      {scanResult && <ScanResultBanner result={scanResult} onDismiss={() => setScanResult(null)} />}
 
       {/* Careers coverage gap banner */}
       {careersGaps && (careersGaps.no_domain?.length > 0 || careersGaps.not_found?.length > 0) && (

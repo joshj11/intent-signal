@@ -65,6 +65,9 @@ export const api = {
     delete: (id) => request(`/api/investor-prospects/${id}`, { method: 'DELETE' }),
     recheck: () => request('/api/investor-prospects/recheck', { method: 'POST' }),
   },
+  scan: {
+    runs: (limit = 1) => request(`/api/scan/runs?limit=${limit}`),
+  },
   runSignals: () => request('/api/run-signals', { method: 'POST' }),
   scanAll: () => request('/api/scan/all', { method: 'POST', body: { confirm: true } }),
   coverage: {

@@ -5,6 +5,7 @@
 import supabase from '../lib/supabase.js'
 import log from '../lib/logger.js'
 import { triggerAlert } from '../lib/triggerAlert.js'
+import { getSetting } from '../lib/settingsCache.js'
 
 import { checkForAccount as checkConference } from '../scrapers/conferenceScraper.js'
 import { checkForAccount as checkCareers } from '../scrapers/careersScraper.js'
@@ -19,6 +20,26 @@ import { checkForAccount as checkMaActivity } from '../scrapers/maActivity.js'
 import { checkForAccount as checkIpoFiling } from '../scrapers/ipoFiling.js'
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+
+async function buildSkippedWarnings() {
+  const [perigon, adzunaId, adzunaKey, crunchbase] = await Promise.all([
+    getSetting('perigon_api_key'),
+    getSetting('adzuna_app_id'),
+    getSetting('adzuna_app_key'),
+    getSetting('crunchbase_api_key'),
+  ])
+  const warnings = []
+  if (!perigon && !process.env.PERIGON_API_KEY) {
+    warnings.push({ label: 'Perigon', affects: ['Competitor bad press', 'Competitor product sunset (news)'] })
+  }
+  if ((!adzunaId || !adzunaKey) && (!process.env.ADZUNA_APP_ID || !process.env.ADZUNA_APP_KEY)) {
+    warnings.push({ label: 'Adzuna', affects: ['New economic buyer'] })
+  }
+  if (!crunchbase && !process.env.CRUNCHBASE_API_KEY) {
+    warnings.push({ label: 'Crunchbase', affects: ['Funding round'] })
+  }
+  return warnings
+}
 
 async function loadRecentSignals(accountId) {
   const { data } = await supabase
@@ -105,10 +126,14 @@ export async function scanAccount(accountId, options = {}) {
  *
  * @returns {{ accounts_scanned, signals_found, proxycurl_credits_used, proxycurl_skipped, errors }}
  */
-export async function scanAllAccounts() {
+export async function scanAllAccounts({ triggeredBy = 'manual' } = {}) {
   const weeklyCapEnv = parseInt(process.env.PROXYCURL_WEEKLY_CAP ?? '50', 10)
   const proxyCreditTracker = { used: 0, skipped: 0, limit: weeklyCapEnv }
   const pageCache = {}
+  const skipped = await buildSkippedWarnings()
+  if (skipped.length) {
+    log.warn({ skipped: skipped.map((s) => s.label) }, '[scanner] detectors skipped due to missing API keys')
+  }
 
   // Active accounts only, sorted by closed_lost_at ASC (oldest deals first — most time-sensitive)
   const { data: accounts, error } = await supabase
@@ -118,7 +143,10 @@ export async function scanAllAccounts() {
     .order('closed_lost_at', { ascending: true, nullsFirst: false })
 
   if (error) throw new Error(error.message)
-  if (!accounts?.length) return { accounts_scanned: 0, signals_found: 0, proxycurl_credits_used: 0, proxycurl_skipped: 0 }
+  if (!accounts?.length) {
+    await supabase.from('scan_runs').insert({ triggered_by: triggeredBy, accounts_scanned: 0, signals_found: 0, errors_count: 0, skipped })
+    return { accounts_scanned: 0, signals_found: 0, proxycurl_credits_used: 0, proxycurl_skipped: 0, skipped }
+  }
 
   let accountsScanned = 0
   let signalsFound = 0
@@ -144,11 +172,20 @@ export async function scanAllAccounts() {
     )
   }
 
+  await supabase.from('scan_runs').insert({
+    triggered_by: triggeredBy,
+    accounts_scanned: accountsScanned,
+    signals_found: signalsFound,
+    errors_count: errors.length,
+    skipped,
+  })
+
   return {
     accounts_scanned: accountsScanned,
     signals_found: signalsFound,
     proxycurl_credits_used: proxyCreditTracker.used,
     proxycurl_skipped: proxyCreditTracker.skipped,
     errors,
+    skipped,
   }
 }

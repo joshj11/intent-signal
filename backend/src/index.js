@@ -46,7 +46,7 @@ app.get('/health', (_req, res) => res.json({ ok: true }))
 cron.schedule('0 7 * * 1', () => {
   const run_at = new Date().toISOString()
   log.info({ run_at }, '[cron] weekly scan started')
-  scanAllAccounts()
+  scanAllAccounts({ triggeredBy: 'cron' })
     .then(({ accounts_scanned, signals_found, proxycurl_credits_used, proxycurl_skipped, errors }) => {
       log.info(
         { run_at, accounts_scanned, signals_found, proxycurl_credits_used, proxycurl_skipped, errors: errors?.length ?? 0 },
