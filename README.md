@@ -14,7 +14,7 @@ B2B sales tool that monitors closed-lost accounts for re-engagement signals. Tra
 
 | Page | Route | Description |
 |------|-------|-------------|
-| Signal Feed | `/` | All signals across accounts, filterable by type |
+| Signal Feed | `/signals` | All signals across accounts, filterable by type |
 | Accounts | `/accounts` | List of tracked closed-lost accounts |
 | Account Detail | `/accounts/:id` | Signals, contacts, and scan history for one account |
 | Investor Prospects | `/investor-prospects` | Accounts with shared investors — warm intro leads |
@@ -66,6 +66,7 @@ npm run dev
 | `SENDGRID_FROM_EMAIL` | Yes | Verified sender address |
 | `ALERT_EMAILS` | Yes | Comma-separated rep emails to receive alerts |
 | `FRONTEND_URL` | Yes | Frontend origin for CORS (default: `http://localhost:5173`) |
+| `CRUNCHBASE_API_KEY` | No | Crunchbase API key — alternative to configuring it in the Settings screen |
 | `OUR_CRUNCHBASE_PERMALINK` | No | Your company's Crunchbase permalink — used for shared investor enrichment at import |
 | `PROXYCURL_API_KEY` | No | Enables LinkedIn monitoring (champion moves, blocker departures) |
 | `PROXYCURL_WEEKLY_CAP` | No | Max Proxycurl credits per weekly scan (default: `50`) |
@@ -75,7 +76,7 @@ npm run dev
 | `ADZUNA_APP_KEY` | No | Enables economic buyer signals |
 | `ADZUNA_MARKET` | No | Adzuna job market country code (default: `gb`) |
 
-The **Crunchbase API key** is configured in the app's Settings screen, not in env. It's stored in the `settings` DB table under the key `crunchbase_api_key`.
+The **Crunchbase API key** can be configured either in the app's Settings screen (stored in the `settings` DB table) or via the `CRUNCHBASE_API_KEY` env var. The Settings screen takes precedence.
 
 ## Authentication
 
