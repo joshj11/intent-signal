@@ -5,7 +5,7 @@ B2B sales tool that monitors closed-lost accounts for re-engagement signals. Tra
 ## Stack
 
 - **Frontend**: React + Tailwind → Vercel
-- **Backend**: Node.js + Express → Railway
+- **Backend**: Node.js + Express → Render
 - **Database**: Supabase (Postgres + Auth)
 - **Alerts**: Nodemailer (via SendGrid SMTP)
 - **Enrichment**: Crunchbase API (configured in-app), Proxycurl (optional), Perigon (optional), Adzuna (optional)
