@@ -74,41 +74,46 @@ export async function scanAccount(accountId, options = {}) {
   const recentSignals = await loadRecentSignals(accountId)
   const sharedOpts = { recentSignals, proxyCreditTracker, pageCache }
 
-  // Champions first (RULE 3), then Blockers, then account-level detectors
-  const detectors = [
+  // Proxycurl detectors share a credit tracker and must run sequentially to respect the cap.
+  // All other detectors are independent — run them in parallel.
+  const proxycurlDetectors = [
     { name: 'champion_move',        fn: () => checkChampionMove(account, sharedOpts) },
     { name: 'champion_new_company', fn: () => checkChampionNewCo(account, sharedOpts) },
     { name: 'blocker_departed',     fn: () => checkBlockerDeparted(account, sharedOpts) },
-    { name: 'conference',           fn: () => checkConference(account, sharedOpts) },
-    { name: 'careers',              fn: () => checkCareers(account, sharedOpts) },
-    { name: 'funding',              fn: () => checkFunding(account, sharedOpts) },
-    { name: 'competitor_bad_news',  fn: () => checkCompetitorBadNews(account, sharedOpts) },
-    { name: 'competitor_sunset',    fn: () => checkCompetitorSunset(account, sharedOpts) },
-    { name: 'new_economic_buyer',   fn: () => checkEconomicBuyer(account, sharedOpts) },
-    { name: 'ma_activity',         fn: () => checkMaActivity(account, sharedOpts) },
-    { name: 'ipo_filing',           fn: () => checkIpoFiling(account, sharedOpts) },
+  ]
+  const parallelDetectors = [
+    { name: 'conference',          fn: () => checkConference(account, sharedOpts) },
+    { name: 'careers',             fn: () => checkCareers(account, sharedOpts) },
+    { name: 'funding',             fn: () => checkFunding(account, sharedOpts) },
+    { name: 'competitor_bad_news', fn: () => checkCompetitorBadNews(account, sharedOpts) },
+    { name: 'competitor_sunset',   fn: () => checkCompetitorSunset(account, sharedOpts) },
+    { name: 'new_economic_buyer',  fn: () => checkEconomicBuyer(account, sharedOpts) },
+    { name: 'ma_activity',        fn: () => checkMaActivity(account, sharedOpts) },
+    { name: 'ipo_filing',          fn: () => checkIpoFiling(account, sharedOpts) },
   ]
 
   const result = { signals_found: 0, signal_types: [], errors: [] }
 
-  for (const { name, fn } of detectors) {
+  async function runDetector({ name, fn }) {
     try {
       const signals = await fn()
       for (const signal of signals) {
         await triggerAlert(signal)
         result.signals_found++
-        if (!result.signal_types.includes(signal.signal_type)) {
-          result.signal_types.push(signal.signal_type)
-        }
+        if (!result.signal_types.includes(signal.signal_type)) result.signal_types.push(signal.signal_type)
       }
-      if (signals.length) {
-        log.info({ detector: name, fired: signals.length, account: account.name }, '[scanner]')
-      }
+      if (signals.length) log.info({ detector: name, fired: signals.length, account: account.name }, '[scanner]')
     } catch (err) {
       log.error({ detector: name, err: err.message, account: account.name }, '[scanner] detector error')
       result.errors.push({ detector: name, error: err.message })
     }
   }
+
+  // Run parallel detectors concurrently, Proxycurl detectors sequentially
+  await Promise.all([
+    Promise.all(parallelDetectors.map(runDetector)),
+    (async () => { for (const d of proxycurlDetectors) await runDetector(d) })(),
+  ])
 
   // Update last_scanned_at after all detectors complete
   await supabase
@@ -135,11 +140,12 @@ export async function scanAllAccounts({ triggeredBy = 'manual' } = {}) {
     log.warn({ skipped: skipped.map((s) => s.label) }, '[scanner] detectors skipped due to missing API keys')
   }
 
-  // Active accounts only, sorted by closed_lost_at ASC (oldest deals first — most time-sensitive)
+  // Closed-lost active accounts only — territory accounts have no re-engagement signals to detect
   const { data: accounts, error } = await supabase
     .from('accounts')
     .select('id, name')
     .eq('status', 'active')
+    .eq('account_type', 'closed_lost')
     .order('closed_lost_at', { ascending: true, nullsFirst: false })
 
   if (error) throw new Error(error.message)
