@@ -6,6 +6,7 @@
 import axios from 'axios'
 import supabase from '../lib/supabase.js'
 import log from '../lib/logger.js'
+import { generateManualReminders } from './manualLinkedInReminder.js'
 
 const PROXYCURL_BASE = 'https://nubela.co/proxycurl/api/v2'
 const SIGNAL_TYPE = 'champion_move'
@@ -31,7 +32,7 @@ export async function checkForAccount(account, { proxyCreditTracker } = {}) {
 
   const apiKey = keyRow.data?.value
   const enabled = enabledRow.data?.value === true
-  if (!enabled || !apiKey) return []
+  if (!enabled || !apiKey) return generateManualReminders(account, 'champion', 'champion_move')
   if (account.loss_reason === 'bad_fit') return []
 
   const threshold = stalenessMs(account.closed_lost_at)

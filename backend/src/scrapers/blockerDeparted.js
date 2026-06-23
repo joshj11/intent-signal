@@ -7,6 +7,7 @@ import axios from 'axios'
 import supabase from '../lib/supabase.js'
 import log from '../lib/logger.js'
 import { getDetectorState, setDetectorState } from '../lib/detectorState.js'
+import { generateManualReminders } from './manualLinkedInReminder.js'
 
 const DETECTOR = 'blocker_departed'
 const SIGNAL_TYPE = 'blocker_departed'
@@ -22,7 +23,7 @@ function stalenessMs(lostAt) {
 
 export async function checkForAccount(account, { proxyCreditTracker } = {}) {
   const apiKey = process.env.PROXYCURL_KEY
-  if (!apiKey) return []
+  if (!apiKey) return generateManualReminders(account, 'blocker', 'blocker_departed')
   if (account.loss_reason === 'bad_fit') return []
 
   const threshold = stalenessMs(account.closed_lost_at)
