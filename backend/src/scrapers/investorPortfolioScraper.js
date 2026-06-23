@@ -123,6 +123,32 @@ async function scrapeBattery() {
   return companies
 }
 
+// ─── Insight Partners ─────────────────────────────────────────────────────────
+// WordPress REST API — custom post type 'sfcompany', paginated JSON.
+// No headless browser needed despite the Vue.js frontend.
+
+async function scrapeInsightPartners() {
+  const companies = []
+  let page = 1
+  while (true) {
+    const res = await axios.get('https://www.insightpartners.com/wp-json/wp/v2/sfcompany', {
+      params: { per_page: 100, page },
+      headers: HEADERS,
+      timeout: 20000,
+    })
+    if (!Array.isArray(res.data) || !res.data.length) break
+    for (const entry of res.data) {
+      const name = entry.title?.rendered
+      if (name) companies.push({ company_name: name, domain: null })
+    }
+    // WordPress returns X-WP-TotalPages header; stop if we've fetched all pages
+    const totalPages = parseInt(res.headers['x-wp-totalpages'] ?? '1', 10)
+    if (page >= totalPages) break
+    page++
+  }
+  return companies
+}
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 const INVESTORS = [
@@ -130,6 +156,7 @@ const INVESTORS = [
   { name: 'Opus Capital',              scrape: scrapeOpus },
   { name: 'DFJ Growth',               scrape: scrapeDFJ },
   { name: 'Battery Ventures',         scrape: scrapeBattery },
+  { name: 'Insight Partners',         scrape: scrapeInsightPartners },
 ]
 
 export async function scrapeInvestorPortfolios() {
