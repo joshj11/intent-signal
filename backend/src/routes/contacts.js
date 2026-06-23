@@ -5,7 +5,10 @@ const router = Router()
 
 // GET /api/contacts?account_id=...
 router.get('/', async (req, res) => {
-  let query = supabase.from('contacts').select('*, accounts(name, loss_reason)')
+  let query = supabase
+    .from('contacts')
+    .select('*, accounts!inner(name, loss_reason)')
+    .eq('accounts.user_id', req.user.id)
 
   if (req.query.account_id) {
     query = query.eq('account_id', req.query.account_id)

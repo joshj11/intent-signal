@@ -11,7 +11,8 @@ router.get('/', async (req, res) => {
 
   const { data, error } = await supabase
     .from('signals')
-    .select('*, accounts(name, loss_reason, rep_email), contacts(name, tag)')
+    .select('*, accounts!inner(name, loss_reason, rep_email), contacts(name, tag)')
+    .eq('accounts.user_id', req.user.id)
     .order('fired_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
@@ -23,8 +24,9 @@ router.get('/', async (req, res) => {
 router.post('/:id/alert', async (req, res) => {
   const { data: signal, error } = await supabase
     .from('signals')
-    .select('*, accounts(*), contacts(*)')
+    .select('*, accounts!inner(*), contacts(*)')
     .eq('id', req.params.id)
+    .eq('accounts.user_id', req.user.id)
     .single()
 
   if (error) return res.status(404).json({ error: error.message })
@@ -63,6 +65,15 @@ router.post('/:id/alert', async (req, res) => {
 
 // POST /api/signals/:id/ignore
 router.post('/:id/ignore', async (req, res) => {
+  // Verify ownership via account join before mutating
+  const { data: check } = await supabase
+    .from('signals')
+    .select('id, accounts!inner(user_id)')
+    .eq('id', req.params.id)
+    .eq('accounts.user_id', req.user.id)
+    .single()
+  if (!check) return res.status(404).json({ error: 'Signal not found' })
+
   const { data, error } = await supabase
     .from('signals')
     .update({ ignored: true, ignored_at: new Date().toISOString() })

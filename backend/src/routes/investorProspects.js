@@ -9,6 +9,7 @@ router.get('/', async (req, res) => {
   const { data, error } = await supabase
     .from('investor_prospects')
     .select('*')
+    .eq('uploaded_by', req.user.id)
     .order('uploaded_at', { ascending: false })
   if (error) return res.status(500).json({ error: error.message })
   res.json(data)
@@ -28,7 +29,7 @@ router.post('/bulk', async (req, res) => {
     valid.push({ ...p, company_name: p.company_name.trim() })
   }
 
-  const { data: existing } = await supabase.from('investor_prospects').select('company_name, domain')
+  const { data: existing } = await supabase.from('investor_prospects').select('company_name, domain').eq('uploaded_by', req.user.id)
   const existingNames = new Set((existing || []).map((e) => e.company_name.toLowerCase().trim()))
   const existingDomains = new Set((existing || []).map((e) => e.domain).filter(Boolean).map((d) => d.toLowerCase().trim()))
 
@@ -95,6 +96,7 @@ router.patch('/:id', async (req, res) => {
     .from('investor_prospects')
     .update(updates)
     .eq('id', req.params.id)
+    .eq('uploaded_by', req.user.id)
     .select()
     .single()
   if (error) return res.status(500).json({ error: error.message })
@@ -102,7 +104,11 @@ router.patch('/:id', async (req, res) => {
 })
 
 router.delete('/:id', async (req, res) => {
-  const { error } = await supabase.from('investor_prospects').delete().eq('id', req.params.id)
+  const { error } = await supabase
+    .from('investor_prospects')
+    .delete()
+    .eq('id', req.params.id)
+    .eq('uploaded_by', req.user.id)
   if (error) return res.status(500).json({ error: error.message })
   res.status(204).send()
 })

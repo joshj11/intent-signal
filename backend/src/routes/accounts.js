@@ -8,10 +8,13 @@ const router = Router()
 
 // GET /api/accounts
 router.get('/', async (req, res) => {
+  const userId = req.user.id
+
   const [accountsRes, signalsRes] = await Promise.all([
     supabase
       .from('accounts')
       .select('*, contacts(id, name, tag)')
+      .eq('user_id', userId)
       .order('created_at', { ascending: false }),
     supabase
       .from('signals')
@@ -41,6 +44,7 @@ router.get('/:id', async (req, res) => {
     .from('accounts')
     .select('*, contacts(*)')
     .eq('id', req.params.id)
+    .eq('user_id', req.user.id)
     .single()
 
   if (error) return res.status(404).json({ error: error.message })
@@ -54,11 +58,13 @@ router.post('/bulk', async (req, res) => {
     return res.status(400).json({ error: 'accounts array is required' })
   }
 
-  // Dedup against existing names in DB
-  const { data: existing } = await supabase.from('accounts').select('name')
+  // Dedup against this user's existing accounts
+  const { data: existing } = await supabase.from('accounts').select('name').eq('user_id', req.user.id)
   const existingNames = new Set((existing || []).map((a) => a.name.toLowerCase().trim()))
 
-  const toInsert = accounts.filter((a) => !existingNames.has(a.name.toLowerCase().trim()))
+  const toInsert = accounts
+    .filter((a) => !existingNames.has(a.name.toLowerCase().trim()))
+    .map((a) => ({ ...a, user_id: req.user.id }))
 
   if (!toInsert.length) {
     return res.json({ inserted: 0, skipped: accounts.length })
@@ -86,7 +92,7 @@ router.post('/', async (req, res) => {
 
   const { data, error } = await supabase
     .from('accounts')
-    .insert({ name, domain, account_type, loss_reason: loss_reason || null, rep_email, notes, closed_lost_at: closed_lost_at || null })
+    .insert({ user_id: req.user.id, name, domain, account_type, loss_reason: loss_reason || null, rep_email, notes, closed_lost_at: closed_lost_at || null })
     .select()
     .single()
 
@@ -116,7 +122,11 @@ router.patch('/bulk', async (req, res) => {
     return res.status(400).json({ error: 'no valid update fields provided' })
   }
 
-  const { error } = await supabase.from('accounts').update(safeUpdates).in('id', ids)
+  const { error } = await supabase
+    .from('accounts')
+    .update(safeUpdates)
+    .in('id', ids)
+    .eq('user_id', req.user.id)
   if (error) return res.status(500).json({ error: error.message })
   res.json({ updated: ids.length })
 })
@@ -128,7 +138,11 @@ router.delete('/bulk', async (req, res) => {
     return res.status(400).json({ error: 'ids array is required' })
   }
 
-  const { error } = await supabase.from('accounts').delete().in('id', ids)
+  const { error } = await supabase
+    .from('accounts')
+    .delete()
+    .in('id', ids)
+    .eq('user_id', req.user.id)
   if (error) return res.status(500).json({ error: error.message })
   res.status(204).send()
 })
@@ -144,6 +158,7 @@ router.patch('/:id', async (req, res) => {
     .from('accounts')
     .update(updates)
     .eq('id', req.params.id)
+    .eq('user_id', req.user.id)
     .select()
     .single()
 
@@ -153,6 +168,16 @@ router.patch('/:id', async (req, res) => {
 
 // POST /api/accounts/:id/scan — run all 11 detectors for a single account
 router.post('/:id/scan', async (req, res) => {
+  // Verify ownership before scanning
+  const { data: account, error: ownerErr } = await supabase
+    .from('accounts')
+    .select('id')
+    .eq('id', req.params.id)
+    .eq('user_id', req.user.id)
+    .single()
+
+  if (ownerErr || !account) return res.status(404).json({ error: 'Account not found' })
+
   const manualCap = parseInt(process.env.PROXYCURL_MANUAL_CAP ?? '10', 10)
   const proxyCreditTracker = { used: 0, skipped: 0, limit: manualCap }
   try {
@@ -169,7 +194,11 @@ router.post('/:id/scan', async (req, res) => {
 
 // DELETE /api/accounts/:id
 router.delete('/:id', async (req, res) => {
-  const { error } = await supabase.from('accounts').delete().eq('id', req.params.id)
+  const { error } = await supabase
+    .from('accounts')
+    .delete()
+    .eq('id', req.params.id)
+    .eq('user_id', req.user.id)
   if (error) return res.status(500).json({ error: error.message })
   res.status(204).send()
 })

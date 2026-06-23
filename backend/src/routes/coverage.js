@@ -12,6 +12,7 @@ router.get('/careers', async (req, res) => {
     supabase
       .from('accounts')
       .select('id, name, domain, careers_url, account_type, loss_reason')
+      .eq('user_id', req.user.id)
       .order('name'),
     supabase
       .from('detector_state')

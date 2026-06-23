@@ -5,6 +5,7 @@
 
 create table if not exists accounts (
   id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade,
   name text not null,
   domain text,
   loss_reason text not null check (loss_reason in (
@@ -88,6 +89,7 @@ create index if not exists idx_signals_account_id on signals(account_id);
 create index if not exists idx_signals_fired_at on signals(fired_at desc);
 create index if not exists idx_signals_alerted on signals(alerted);
 create index if not exists idx_accounts_loss_reason on accounts(loss_reason);
+create index if not exists idx_accounts_user_id on accounts(user_id);
 
 -- ─── Updated_at trigger ───────────────────────────────────────────────────────
 
