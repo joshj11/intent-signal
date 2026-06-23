@@ -626,7 +626,7 @@ export default function InvestorProspects() {
           ) : (
             <div className="space-y-4">
               <p className="text-sm text-gray-600">
-                This will re-run the Crunchbase investor check for all prospects that haven't been checked in the last 30 days. Use this after a new funding round to find new shared investors.
+                This will re-check all prospects against the investor portfolio cache. Use this after uploading new prospects or when you want to refresh shared investor matches.
               </p>
               <div className="flex justify-end gap-2">
                 <button onClick={() => setShowRecheck(false)} disabled={rechecking} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-40">Cancel</button>
