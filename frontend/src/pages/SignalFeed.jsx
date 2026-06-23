@@ -60,7 +60,7 @@ function SignalCard({ signal, onAlert, onIgnore }) {
               </a>
             )}
             {signal.alerted && (
-              <span className="text-xs text-green-600 font-medium">Alerted</span>
+              <span className="text-xs text-green-600 font-medium">Acknowledged</span>
             )}
             {signal.ignored && (
               <span className="text-xs text-gray-400 font-medium">Ignored</span>
@@ -75,7 +75,7 @@ function SignalCard({ signal, onAlert, onIgnore }) {
               disabled={!!acting}
               className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-xs font-medium hover:bg-gray-700 disabled:opacity-50"
             >
-              {acting === 'alert' ? 'Sending...' : 'Alert rep'}
+              {acting === 'alert' ? 'Saving...' : 'Acknowledge'}
             </button>
             <button
               onClick={() => act(onIgnore, 'ignore')}
@@ -159,7 +159,7 @@ export default function SignalFeed() {
       </div>
 
       <div className="flex gap-1 mb-4">
-        {[['pending', 'Pending'], ['alerted', 'Alerted'], ['ignored', 'Ignored'], ['all', 'All']].map(([v, l]) => (
+        {[['pending', 'Pending'], ['alerted', 'Acknowledged'], ['ignored', 'Ignored'], ['all', 'All']].map(([v, l]) => (
           <button
             key={v}
             onClick={() => setFilter(v)}
