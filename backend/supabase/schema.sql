@@ -59,6 +59,17 @@ create table if not exists signals (
   created_at timestamptz default now()
 );
 
+-- ─── Investor portfolio cache ────────────────────────────────────────────────
+
+create table if not exists investor_portfolio_companies (
+  id                      uuid primary key default gen_random_uuid(),
+  investor_name           text not null,
+  company_name            text not null,
+  company_name_normalized text not null,
+  domain                  text,
+  scraped_at              timestamptz not null default now()
+);
+
 -- ─── Settings ────────────────────────────────────────────────────────────────
 
 create table if not exists settings (
@@ -90,6 +101,9 @@ create index if not exists idx_signals_fired_at on signals(fired_at desc);
 create index if not exists idx_signals_alerted on signals(alerted);
 create index if not exists idx_accounts_loss_reason on accounts(loss_reason);
 create index if not exists idx_accounts_user_id on accounts(user_id);
+create index if not exists idx_ipc_name_norm on investor_portfolio_companies(company_name_normalized);
+create index if not exists idx_ipc_domain    on investor_portfolio_companies(domain);
+create index if not exists idx_ipc_investor  on investor_portfolio_companies(investor_name);
 
 -- ─── Updated_at trigger ───────────────────────────────────────────────────────
 

@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import supabase from '../lib/supabase.js'
 import { enrichImportedProspects, enrichStaleProspects } from '../lib/sharedInvestorEnrich.js'
+import { scrapeInvestorPortfolios } from '../scrapers/investorPortfolioScraper.js'
 import log from '../lib/logger.js'
 
 const router = Router()
@@ -63,6 +64,16 @@ router.post('/bulk', async (req, res) => {
 router.post('/recheck', async (req, res) => {
   try {
     const result = await enrichStaleProspects()
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /refresh-portfolio — re-scrape investor portfolio pages and rebuild cache
+router.post('/refresh-portfolio', async (req, res) => {
+  try {
+    const result = await scrapeInvestorPortfolios()
     res.json(result)
   } catch (err) {
     res.status(500).json({ error: err.message })
