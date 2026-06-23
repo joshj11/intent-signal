@@ -69,6 +69,10 @@ export const api = {
   scan: {
     runs: (limit = 1) => request(`/api/scan/runs?limit=${limit}`),
   },
+  competitors: {
+    list: () => request('/api/competitors'),
+    add: (name) => request('/api/competitors', { method: 'POST', body: { name } }),
+  },
   runSignals: () => request('/api/run-signals', { method: 'POST' }),
   scanAll: () => request('/api/scan/all', { method: 'POST', body: { confirm: true } }),
   coverage: {

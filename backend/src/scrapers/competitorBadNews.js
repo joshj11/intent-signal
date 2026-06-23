@@ -7,18 +7,19 @@ import log from '../lib/logger.js'
 import { searchPerigon } from '../lib/perigonClient.js'
 import { getDetectorState, setDetectorState } from '../lib/detectorState.js'
 import { shouldAlertForAccount, isDuplicate } from '../lib/alertRules.js'
-import { COMPETITORS_PERIGON_CLAUSE, detectCompetitor } from '../lib/sisenseCompetitors.js'
+import { getAllCompetitors, buildPerigonClause, detectCompetitor } from '../lib/sisenseCompetitors.js'
 
 const DETECTOR = 'competitor_bad_news'
 const SIGNAL_TYPE = 'competitor_bad_news'
 const BAD_NEWS_KEYWORDS = ['acquired', 'pricing', 'layoffs', 'shutdown', 'breach', 'outage']
 
-export async function checkForAccount(account, { recentSignals = [] } = {}) {
+export async function checkForAccount(account, { recentSignals = [], competitors } = {}) {
   if (!shouldAlertForAccount({ account, contacts: account.contacts ?? [], signalType: SIGNAL_TYPE })) return []
   if (isDuplicate(recentSignals, account.id, SIGNAL_TYPE)) return []
 
+  const allCompetitors = competitors ?? await getAllCompetitors()
   const articles = await searchPerigon(
-    `(${COMPETITORS_PERIGON_CLAUSE}) AND (${BAD_NEWS_KEYWORDS.join(' OR ')})`,
+    `(${buildPerigonClause(allCompetitors)}) AND (${BAD_NEWS_KEYWORDS.join(' OR ')})`,
     { from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() }
   )
   if (!articles.length) return []
@@ -33,7 +34,7 @@ export async function checkForAccount(account, { recentSignals = [] } = {}) {
   if (!fresh.length) return []
 
   const article = fresh[0]
-  const competitor = detectCompetitor(article.title) || detectCompetitor(article.description) || 'A competitor'
+  const competitor = detectCompetitor(article.title, allCompetitors) || detectCompetitor(article.description, allCompetitors) || 'A competitor'
 
   try {
     const { data: signal } = await supabase

@@ -10,6 +10,7 @@ import settingsRouter from './routes/settings.js'
 import coverageRouter from './routes/coverage.js'
 import scanRouter from './routes/scan.js'
 import investorProspectsRouter from './routes/investorProspects.js'
+import competitorsRouter from './routes/competitors.js'
 import { requireAuth } from './middleware/auth.js'
 import { scanAllAccounts } from './jobs/accountScanner.js'
 import log from './lib/logger.js'
@@ -27,6 +28,7 @@ app.use('/api/settings', requireAuth, settingsRouter)
 app.use('/api/coverage', requireAuth, coverageRouter)
 app.use('/api/scan', requireAuth, scanRouter)
 app.use('/api/investor-prospects', requireAuth, investorProspectsRouter)
+app.use('/api/competitors', requireAuth, competitorsRouter)
 
 // Legacy manual trigger — kept for backwards compatibility / admin use
 app.post('/api/run-signals', async (req, res) => {

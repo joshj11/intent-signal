@@ -6,6 +6,7 @@ import supabase from '../lib/supabase.js'
 import log from '../lib/logger.js'
 import { triggerAlert } from '../lib/triggerAlert.js'
 import { getSetting } from '../lib/settingsCache.js'
+import { getAllCompetitors } from '../lib/sisenseCompetitors.js'
 
 import { checkForAccount as checkConference } from '../scrapers/conferenceScraper.js'
 import { checkForAccount as checkCareers } from '../scrapers/careersScraper.js'
@@ -61,7 +62,7 @@ async function loadRecentSignals(accountId) {
  */
 export async function scanAccount(accountId, options = {}) {
   const start = Date.now()
-  const { proxyCreditTracker, pageCache = {} } = options
+  const { proxyCreditTracker, pageCache = {}, competitors } = options
 
   const { data: account, error } = await supabase
     .from('accounts')
@@ -72,7 +73,7 @@ export async function scanAccount(accountId, options = {}) {
   if (error || !account) throw new Error(`Account ${accountId} not found`)
 
   const recentSignals = await loadRecentSignals(accountId)
-  const sharedOpts = { recentSignals, proxyCreditTracker, pageCache }
+  const sharedOpts = { recentSignals, proxyCreditTracker, pageCache, competitors }
 
   // Proxycurl detectors share a credit tracker and must run sequentially to respect the cap.
   // All other detectors are independent — run them in parallel.
@@ -135,6 +136,7 @@ export async function scanAllAccounts({ triggeredBy = 'manual' } = {}) {
   const weeklyCapEnv = parseInt(process.env.PROXYCURL_WEEKLY_CAP ?? '50', 10)
   const proxyCreditTracker = { used: 0, skipped: 0, limit: weeklyCapEnv }
   const pageCache = {}
+  const competitors = await getAllCompetitors()
   const skipped = await buildSkippedWarnings()
   if (skipped.length) {
     log.warn({ skipped: skipped.map((s) => s.label) }, '[scanner] detectors skipped due to missing API keys')
@@ -160,7 +162,7 @@ export async function scanAllAccounts({ triggeredBy = 'manual' } = {}) {
   for (let i = 0; i < accounts.length; i++) {
     if (i > 0) await sleep(500)
     try {
-      const result = await scanAccount(accounts[i].id, { proxyCreditTracker, pageCache })
+      const result = await scanAccount(accounts[i].id, { proxyCreditTracker, pageCache, competitors })
       accountsScanned++
       signalsFound += result.signals_found
       for (const e of result.errors ?? []) errors.push({ account: accounts[i].name, ...e })

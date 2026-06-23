@@ -66,10 +66,17 @@ function AccountForm({ initial, defaultType, onSave, onClose }) {
       rep_email: '',
       notes: '',
       closed_lost_at: new Date().toISOString().split('T')[0],
+      competitor: '',
     }
   )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+  const [competitors, setCompetitors] = useState([])
+  const [customCompetitor, setCustomCompetitor] = useState('')
+
+  useEffect(() => {
+    api.competitors.list().then(setCompetitors).catch(() => {})
+  }, [])
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
   const isClosedLost = form.account_type === 'closed_lost'
@@ -79,7 +86,17 @@ function AccountForm({ initial, defaultType, onSave, onClose }) {
     setSaving(true)
     setError(null)
     try {
-      await onSave(form)
+      const finalForm = { ...form }
+      if (form.competitor === '__custom__') {
+        const trimmed = customCompetitor.trim()
+        if (trimmed) {
+          await api.competitors.add(trimmed).catch(() => {})
+          finalForm.competitor = trimmed
+        } else {
+          finalForm.competitor = ''
+        }
+      }
+      await onSave(finalForm)
       onClose()
     } catch (err) {
       setError(err.message)
@@ -172,6 +189,32 @@ function AccountForm({ initial, defaultType, onSave, onClose }) {
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
+        </div>
+      )}
+
+      {isClosedLost && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Competitor <span className="text-gray-400 font-normal">(optional)</span>
+          </label>
+          <select
+            value={form.competitor || ''}
+            onChange={set('competitor')}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+          >
+            <option value="">— None —</option>
+            {competitors.map((c) => <option key={c} value={c}>{c}</option>)}
+            <option value="__custom__">Other (add new…)</option>
+          </select>
+          {form.competitor === '__custom__' && (
+            <input
+              autoFocus
+              value={customCompetitor}
+              onChange={(e) => setCustomCompetitor(e.target.value)}
+              className="mt-2 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              placeholder="e.g. Alteryx"
+            />
+          )}
         </div>
       )}
 
