@@ -337,10 +337,12 @@ function ProspectRow({ prospect, tab, selected, onToggle, onStatusChange, onDele
             <button onClick={() => onStatusChange(prospect.id, 'not_relevant')} className="text-xs text-gray-400 hover:text-gray-600">Not relevant</button>
           </>}
           {tab === 'intro_requested' && <>
+            <button onClick={() => onStatusChange(prospect.id, 'uncontacted')} className="text-xs text-gray-400 hover:text-gray-600">← Undo</button>
             <button onClick={() => onStatusChange(prospect.id, 'connected')} className="text-xs font-medium text-green-600 hover:text-green-800 whitespace-nowrap">Mark connected ✓</button>
             <button onClick={() => onStatusChange(prospect.id, 'not_relevant')} className="text-xs text-gray-400 hover:text-gray-600">Not relevant</button>
           </>}
           {tab === 'connected' && <>
+            <button onClick={() => onStatusChange(prospect.id, 'intro_requested')} className="text-xs text-gray-400 hover:text-gray-600">← Undo</button>
             <button onClick={() => onStatusChange(prospect.id, 'not_relevant')} className="text-xs text-gray-400 hover:text-gray-600">Not relevant</button>
             <button onClick={() => onDelete(prospect.id)} className="text-xs text-gray-400 hover:text-red-600">Delete</button>
           </>}
