@@ -41,10 +41,23 @@ function parseCSV(text) {
   return rows
 }
 
-function detectNameColumn(headers) {
+function looksLikeUrl(value) {
+  if (!value) return false
+  return /^https?:\/\//i.test(value) || /^www\./i.test(value)
+}
+
+function detectNameColumn(headers, rows) {
   const lower = headers.map((h) => h.toLowerCase().trim())
   const idx = lower.findIndex((h) => NAME_HEADERS.includes(h))
-  return idx >= 0 ? idx : 0
+  if (idx >= 0) return idx
+
+  // No header match — find the first column whose values don't look like URLs
+  const sample = rows.slice(0, 5)
+  for (let i = 0; i < headers.length; i++) {
+    const vals = sample.map((r) => r[i]).filter(Boolean)
+    if (vals.length > 0 && vals.every((v) => !looksLikeUrl(v))) return i
+  }
+  return 0
 }
 
 function detectDomainColumn(headers) {
@@ -90,7 +103,7 @@ export default function CsvImport({ accountType, existingNames, onSuccess, onClo
       const [headerRow, ...dataRows] = parsed
       setHeaders(headerRow)
       setRows(dataRows)
-      setColIndex(detectNameColumn(headerRow))
+      setColIndex(detectNameColumn(headerRow, dataRows))
       setDomainColIndex(detectDomainColumn(headerRow))
     }
     reader.readAsText(file)
