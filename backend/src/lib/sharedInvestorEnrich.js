@@ -86,25 +86,21 @@ export async function enrichImportedProspects(prospects) {
 }
 
 export async function enrichStaleProspects() {
-  const cutoff = new Date()
-  cutoff.setDate(cutoff.getDate() - 30)
-
-  const { data: stale, error } = await supabase
+  const { data: prospects, error } = await supabase
     .from('investor_prospects')
     .select('*')
-    .or(`crunchbase_checked_at.is.null,crunchbase_checked_at.lt.${cutoff.toISOString()}`)
 
   if (error) throw new Error(error.message)
-  if (!stale?.length) return { checked: 0, shared_investors_found: 0 }
+  if (!prospects?.length) return { checked: 0, shared_investors_found: 0 }
 
   await ensurePortfolioCache()
 
   let found = 0
-  for (const prospect of stale) {
+  for (const prospect of prospects) {
     const shared = await enrichRecord(prospect, 'investor_prospects')
     if (shared.length) found++
   }
 
-  log.info({ checked: stale.length, found }, '[sharedInvestors] stale prospects enriched')
-  return { checked: stale.length, shared_investors_found: found }
+  log.info({ checked: prospects.length, found }, '[sharedInvestors] prospects re-checked')
+  return { checked: prospects.length, shared_investors_found: found }
 }
