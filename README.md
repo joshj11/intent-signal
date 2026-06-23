@@ -10,6 +10,11 @@ B2B sales tool that monitors closed-lost accounts for re-engagement signals. Tra
 - **Alerts**: Nodemailer (via SendGrid SMTP)
 - **Enrichment**: Crunchbase API (configured in-app), Proxycurl (optional), Perigon (optional), Adzuna (optional)
 
+## Screenshots
+
+![Investor Prospects](docs/screenshots/investor-prospects.png)
+![How It Works](docs/screenshots/how-it-works.png)
+
 ## Pages
 
 | Page | Route | Description |
