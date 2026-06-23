@@ -1,4 +1,10 @@
--- Run this in the Supabase SQL editor after schema.sql
+-- Run this in the Supabase SQL editor after schema.sql (safe to re-run)
 grant usage on schema public to anon, authenticated, service_role;
 grant all on all tables in schema public to anon, authenticated, service_role;
 grant all on all sequences in schema public to anon, authenticated, service_role;
+
+-- Auto-grant to any tables created by future migrations
+alter default privileges in schema public
+  grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public
+  grant all on sequences to anon, authenticated, service_role;
