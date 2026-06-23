@@ -138,16 +138,14 @@ function AccountForm({ initial, defaultType, onSave, onClose }) {
           placeholder="Acme Corp"
         />
       </div>
-      <div className={isClosedLost ? 'grid grid-cols-2 gap-3' : ''}>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Domain</label>
-          <input
-            value={form.domain}
-            onChange={set('domain')}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-            placeholder="acme.com"
-          />
-        </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Domain</label>
+        <input
+          value={form.domain}
+          onChange={set('domain')}
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+          placeholder="acme.com"
+        />
       </div>
 
       <div>
@@ -195,7 +193,7 @@ function AccountForm({ initial, defaultType, onSave, onClose }) {
       {isClosedLost && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Competitor <span className="text-gray-400 font-normal">(optional)</span>
+            Tool they use instead <span className="text-gray-400 font-normal">(optional)</span>
           </label>
           <select
             value={form.competitor || ''}
