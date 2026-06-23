@@ -357,6 +357,7 @@ function ProspectRow({ prospect, tab, selected, onToggle, onStatusChange, onDele
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 const TABS = [
+  { value: 'all',            label: 'All' },
   { value: 'uncontacted',    label: 'Uncontacted' },
   { value: 'intro_requested', label: 'Intro Requested' },
   { value: 'connected',      label: 'Connected' },
@@ -446,7 +447,7 @@ export default function InvestorProspects() {
     URL.revokeObjectURL(url)
   }
 
-  const tabProspects = prospects.filter((p) => p.status === activeTab)
+  const tabProspects = activeTab === 'all' ? prospects : prospects.filter((p) => p.status === activeTab)
   const filtered = tabProspects
     .filter((p) => !filterSharedOnly || p.has_shared_investor)
     .filter((p) => !search || p.company_name.toLowerCase().includes(search.toLowerCase()))
@@ -482,7 +483,7 @@ export default function InvestorProspects() {
       {/* Tabs */}
       <div className="flex border-b border-gray-200 mb-4">
         {TABS.map((tab) => {
-          const count = prospects.filter((p) => p.status === tab.value).length
+          const count = tab.value === 'all' ? prospects.length : prospects.filter((p) => p.status === tab.value).length
           const isActive = activeTab === tab.value
           return (
             <button
@@ -534,7 +535,7 @@ export default function InvestorProspects() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-12 text-sm text-gray-400">
-          {tabProspects.length === 0 ? `No prospects in ${TABS.find(t => t.value === activeTab)?.label}.` : 'No results match your search.'}
+          {tabProspects.length === 0 ? (activeTab === 'all' ? 'No prospects yet.' : `No prospects in ${TABS.find(t => t.value === activeTab)?.label}.`) : 'No results match your search.'}
         </div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -573,7 +574,7 @@ export default function InvestorProspects() {
                 <ProspectRow
                   key={p.id}
                   prospect={p}
-                  tab={activeTab}
+                  tab={activeTab === 'all' ? p.status : activeTab}
                   selected={selected.has(p.id)}
                   onToggle={() => toggleOne(p.id)}
                   onStatusChange={handleStatusChange}
