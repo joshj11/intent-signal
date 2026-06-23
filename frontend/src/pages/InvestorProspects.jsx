@@ -163,7 +163,8 @@ function CsvUploadModal({ onSuccess, onClose }) {
       const [headerRow, ...dataRows] = parsed
       setHeaders(headerRow)
       setRows(dataRows)
-      setNameCol(detectCol(headerRow, ['company_name', 'company', 'name', 'account', 'organization']) ?? 0)
+      const detectedName = detectCol(headerRow, ['company_name', 'company name', 'account name', 'company', 'name', 'account', 'organization'])
+      setNameCol(detectedName >= 0 ? detectedName : 0)
       setDomainCol(detectCol(headerRow, ['domain', 'website', 'url', 'site']))
       setNotesCol(detectCol(headerRow, ['notes', 'note', 'comments', 'comment']))
     }
