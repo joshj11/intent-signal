@@ -1,25 +1,25 @@
 /**
- * competitor_bad_news — fires when a closed-lost competitor appears in negative press.
- * Source: Perigon API (replaces NewsAPI).
+ * competitor_bad_news — fires when any Sisense competitor appears in negative press.
+ * Source: Perigon API. Competitor list is hardcoded in sisenseCompetitors.js.
  */
 import supabase from '../lib/supabase.js'
 import log from '../lib/logger.js'
 import { searchPerigon } from '../lib/perigonClient.js'
 import { getDetectorState, setDetectorState } from '../lib/detectorState.js'
 import { shouldAlertForAccount, isDuplicate } from '../lib/alertRules.js'
+import { COMPETITORS_PERIGON_CLAUSE, detectCompetitor } from '../lib/sisenseCompetitors.js'
 
 const DETECTOR = 'competitor_bad_news'
 const SIGNAL_TYPE = 'competitor_bad_news'
 const BAD_NEWS_KEYWORDS = ['acquired', 'pricing', 'layoffs', 'shutdown', 'breach', 'outage']
 
 export async function checkForAccount(account, { recentSignals = [] } = {}) {
-  if (!account.competitor?.trim()) return []
   if (!shouldAlertForAccount({ account, contacts: account.contacts ?? [], signalType: SIGNAL_TYPE })) return []
   if (isDuplicate(recentSignals, account.id, SIGNAL_TYPE)) return []
 
   const articles = await searchPerigon(
-    `"${account.competitor}" AND (${BAD_NEWS_KEYWORDS.join(' OR ')})`,
-    { from: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() }
+    `(${COMPETITORS_PERIGON_CLAUSE}) AND (${BAD_NEWS_KEYWORDS.join(' OR ')})`,
+    { from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() }
   )
   if (!articles.length) return []
 
@@ -28,11 +28,12 @@ export async function checkForAccount(account, { recentSignals = [] } = {}) {
 
   const fresh = articles.filter(
     (a) => a.url && !seenUrls.has(a.url) &&
-      (BAD_NEWS_KEYWORDS.some((kw) => a.title?.toLowerCase().includes(kw) || a.description?.toLowerCase().includes(kw)))
+      BAD_NEWS_KEYWORDS.some((kw) => a.title?.toLowerCase().includes(kw) || a.description?.toLowerCase().includes(kw))
   )
   if (!fresh.length) return []
 
   const article = fresh[0]
+  const competitor = detectCompetitor(article.title) || detectCompetitor(article.description) || 'A competitor'
 
   try {
     const { data: signal } = await supabase
@@ -40,10 +41,10 @@ export async function checkForAccount(account, { recentSignals = [] } = {}) {
       .insert({
         account_id: account.id,
         signal_type: SIGNAL_TYPE,
-        title: `${account.competitor} in the news: ${article.title}`,
-        detail: `Negative press about ${account.competitor} may create re-engagement opportunities at ${account.name}.`,
+        title: `${competitor} in the news: ${article.title}`,
+        detail: `Negative press about ${competitor} may create a re-engagement opportunity at ${account.name}.`,
         source_url: article.url,
-        raw_data: { article, all_fresh_count: fresh.length },
+        raw_data: { competitor, article, all_fresh_count: fresh.length },
       })
       .select()
       .single()

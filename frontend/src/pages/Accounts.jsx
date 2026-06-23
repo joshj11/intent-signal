@@ -61,7 +61,6 @@ function AccountForm({ initial, defaultType, onSave, onClose }) {
       account_type: defaultType || 'closed_lost',
       name: '',
       domain: '',
-      competitor: '',
       careers_url: '',
       loss_reason: 'no_budget',
       rep_email: '',
@@ -132,17 +131,6 @@ function AccountForm({ initial, defaultType, onSave, onClose }) {
             placeholder="acme.com"
           />
         </div>
-        {isClosedLost && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Competitor</label>
-            <input
-              value={form.competitor || ''}
-              onChange={set('competitor')}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-              placeholder="e.g. Salesforce"
-            />
-          </div>
-        )}
       </div>
 
       <div>

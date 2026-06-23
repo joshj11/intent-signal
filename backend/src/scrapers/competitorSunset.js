@@ -1,14 +1,13 @@
 /**
- * competitor_sunset — fires when a competitor announces product end-of-life or deprecation.
- * Two sub-checks: Perigon press (A) and competitor RSS feed (B).
- * Either can fire the signal; only the first match counts per account per run.
+ * competitor_sunset — fires when a Sisense competitor announces product end-of-life or deprecation.
+ * Source: Perigon press. Competitor list is hardcoded in sisenseCompetitors.js.
  */
-import Parser from 'rss-parser'
 import supabase from '../lib/supabase.js'
 import log from '../lib/logger.js'
 import { searchPerigon } from '../lib/perigonClient.js'
 import { getDetectorState, setDetectorState } from '../lib/detectorState.js'
 import { shouldAlertForAccount, isDuplicate } from '../lib/alertRules.js'
+import { COMPETITORS_PERIGON_CLAUSE, detectCompetitor } from '../lib/sisenseCompetitors.js'
 
 const DETECTOR = 'competitor_sunset'
 const SIGNAL_TYPE = 'competitor_sunset'
@@ -18,8 +17,6 @@ const SUNSET_KEYWORDS = [
   'shutting down', 'end of support', 'winding down',
 ]
 
-const rssParser = new Parser({ timeout: 15000 })
-
 function matchesSunset(text) {
   if (!text) return false
   const lower = text.toLowerCase()
@@ -27,56 +24,30 @@ function matchesSunset(text) {
 }
 
 export async function checkForAccount(account, { recentSignals = [] } = {}) {
-  if (!account.competitor?.trim()) return []
   if (!shouldAlertForAccount({ account, contacts: account.contacts ?? [], signalType: SIGNAL_TYPE })) return []
   if (isDuplicate(recentSignals, account.id, SIGNAL_TYPE)) return []
 
   const state = await getDetectorState(DETECTOR, account.id)
   const seenUrls = new Set(state.seen_urls ?? [])
-  const seenGuids = new Set(state.seen_guids ?? [])
 
-  let match = null
-
-  // SUB-CHECK A — Perigon press
   const articles = await searchPerigon(
-    `"${account.competitor}" AND (${SUNSET_KEYWORDS.join(' OR ')})`,
-    { from: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() }
+    `(${COMPETITORS_PERIGON_CLAUSE}) AND (${SUNSET_KEYWORDS.join(' OR ')})`,
+    { from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() }
   )
 
+  let match = null
   for (const article of articles) {
     if (!article.url || seenUrls.has(article.url)) continue
     if (matchesSunset(article.title) || matchesSunset(article.description)) {
-      match = { source: 'press', headline: article.title, url: article.url }
+      match = article
       seenUrls.add(article.url)
       break
     }
   }
 
-  // SUB-CHECK B — RSS feed (only if A didn't fire)
-  if (!match && account.competitor_rss_url) {
-    try {
-      const feed = await rssParser.parseURL(account.competitor_rss_url)
-      const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-
-      for (const item of feed.items ?? []) {
-        const pub = item.pubDate ? new Date(item.pubDate) : null
-        if (pub && pub < cutoff) continue
-        if (item.guid && seenGuids.has(item.guid)) continue
-        if (!matchesSunset(item.title) && !matchesSunset(item.contentSnippet)) continue
-
-        match = { source: 'rss', headline: item.title ?? '(no title)', url: item.link ?? item.guid ?? '' }
-        if (item.guid) seenGuids.add(item.guid)
-        break
-      }
-    } catch (err) {
-      log.warn(
-        { accountId: account.id, rss: account.competitor_rss_url, err: err.message },
-        `[${DETECTOR}] RSS fetch failed`
-      )
-    }
-  }
-
   if (!match) return []
+
+  const competitor = detectCompetitor(match.title) || detectCompetitor(match.description) || 'A competitor'
 
   try {
     const { data: signal } = await supabase
@@ -84,17 +55,16 @@ export async function checkForAccount(account, { recentSignals = [] } = {}) {
       .insert({
         account_id: account.id,
         signal_type: SIGNAL_TYPE,
-        title: `${account.competitor} may be sunsetting: ${match.headline}`,
-        detail: `${account.competitor} appears to be winding down a product or service. ${account.name} may urgently need a replacement.`,
+        title: `${competitor} may be sunsetting: ${match.title}`,
+        detail: `${competitor} appears to be winding down a product or service. ${account.name} may urgently need a replacement.`,
         source_url: match.url,
-        raw_data: { source: match.source, headline: match.headline, url: match.url },
+        raw_data: { competitor, headline: match.title, url: match.url },
       })
       .select()
       .single()
 
     await setDetectorState(DETECTOR, account.id, {
       seen_urls: [...seenUrls].slice(-200),
-      seen_guids: [...seenGuids].slice(-200),
     })
 
     return signal ? [signal] : []
