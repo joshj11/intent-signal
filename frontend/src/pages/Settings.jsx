@@ -189,7 +189,7 @@ export default function Settings() {
             <SaveButton saving={saving.perigon_api_key} saved={saved.perigon_api_key} />
           </div>
           <HowToGet steps={[
-            { text: 'Go to', url: 'https://www.goperigon.com/data-solutions/news-api', linkText: 'goperigon.com' },
+            { text: 'Go to', url: 'https://www.goperigon.com', linkText: 'goperigon.com' },
             { text: 'Click "Get started free" and create an account.' },
             { text: 'In your dashboard, go to API Keys and copy your key.' },
           ]} />
