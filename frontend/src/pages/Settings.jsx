@@ -143,7 +143,7 @@ export default function Settings() {
       {/* Crunchbase */}
       <Section
         title="Crunchbase API"
-        description="Detects new funding rounds at your accounts. Free tier: 200 calls/day."
+        description="Detects new funding rounds and M&A activity at your accounts. Requires a paid Crunchbase plan."
       >
         <form
           onSubmit={(e) => {
@@ -161,10 +161,9 @@ export default function Settings() {
             <SaveButton saving={saving.crunchbase_api_key} saved={saved.crunchbase_api_key} />
           </div>
           <HowToGet steps={[
-            { text: 'Go to', url: 'https://www.crunchbase.com/register', linkText: 'crunchbase.com/register' },
-            { text: 'Create a free account and verify your email.' },
-            { text: 'Visit', url: 'https://data.crunchbase.com/docs/using-the-api', linkText: 'data.crunchbase.com/docs' },
-            { text: 'Navigate to your profile → API Keys and copy your key.' },
+            { text: 'Crunchbase API requires a paid plan. See pricing at', url: 'https://www.crunchbase.com/pricing', linkText: 'crunchbase.com/pricing' },
+            { text: 'After subscribing, go to', url: 'https://www.crunchbase.com/account/api_keys', linkText: 'crunchbase.com/account/api_keys' },
+            { text: 'Copy your key and paste it above.' },
           ]} />
         </form>
       </Section>
