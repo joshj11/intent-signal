@@ -304,11 +304,17 @@ function CsvUploadModal({ onSuccess, onClose }) {
 
 // ─── Prospect table row ───────────────────────────────────────────────────────
 
-function ProspectRow({ prospect, onStatusChange, onDelete }) {
+function ProspectRow({ prospect, selected, onToggle, onStatusChange, onDelete }) {
   const [expanded, setExpanded] = useState(false)
 
   return (
-    <tr className="border-t border-gray-100 hover:bg-gray-50">
+    <tr
+      onClick={onToggle}
+      className={`border-t border-gray-100 cursor-pointer ${selected ? 'bg-gray-50' : 'hover:bg-gray-50'}`}
+    >
+      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+        <input type="checkbox" checked={selected} onChange={onToggle} className="rounded border-gray-300 cursor-pointer" />
+      </td>
       <td className="px-4 py-3">
         <div className="text-sm font-medium text-gray-900">{prospect.company_name}</div>
         {prospect.domain && <div className="text-xs text-gray-400 mt-0.5">{prospect.domain}</div>}
@@ -348,7 +354,7 @@ function ProspectRow({ prospect, onStatusChange, onDelete }) {
         )}
       </td>
       <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">{timeAgo(prospect.uploaded_at)}</td>
-      <td className="px-4 py-3 text-right">
+      <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
         <button onClick={() => onDelete(prospect.id)} className="text-xs text-gray-400 hover:text-red-600">Delete</button>
       </td>
     </tr>
@@ -368,6 +374,7 @@ export default function InvestorProspects() {
   const [filterSharedOnly, setFilterSharedOnly] = useState(false)
   const [filterStatus, setFilterStatus] = useState('')
   const [search, setSearch] = useState('')
+  const [selected, setSelected] = useState(new Set())
 
   useEffect(() => { loadProspects() }, [])
 
@@ -393,6 +400,18 @@ export default function InvestorProspects() {
     if (!confirm('Delete this prospect?')) return
     setProspects((prev) => prev.filter((p) => p.id !== id))
     await api.investorProspects.delete(id)
+  }
+
+  async function handleBulkDelete() {
+    const ids = [...selected]
+    if (!confirm(`Permanently delete ${ids.length} prospect${ids.length !== 1 ? 's' : ''}?`)) return
+    setProspects((prev) => prev.filter((p) => !selected.has(p.id)))
+    setSelected(new Set())
+    await api.investorProspects.bulkDelete(ids)
+  }
+
+  function toggleOne(id) {
+    setSelected((prev) => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s })
   }
 
   async function handleRecheck() {
@@ -434,6 +453,11 @@ export default function InvestorProspects() {
     .filter((p) => !filterSharedOnly || p.has_shared_investor)
     .filter((p) => !filterStatus || p.status === filterStatus)
     .filter((p) => !search || p.company_name.toLowerCase().includes(search.toLowerCase()))
+
+  const filteredIds = filtered.map((p) => p.id)
+  const allSelected = filteredIds.length > 0 && filteredIds.every((id) => selected.has(id))
+  const someSelected = filteredIds.some((id) => selected.has(id))
+  function toggleAll() { setSelected(allSelected ? new Set() : new Set(filteredIds)) }
 
   return (
     <div>
@@ -514,9 +538,29 @@ export default function InvestorProspects() {
         <div className="text-center py-12 text-sm text-gray-400">No results match your filters.</div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          {selected.size > 0 && (
+            <div className="flex items-center gap-3 px-4 py-2.5 bg-gray-900 text-white text-sm">
+              <span>{selected.size} selected</span>
+              <button onClick={handleBulkDelete} className="ml-auto px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-xs font-medium">
+                Delete {selected.size}
+              </button>
+              <button onClick={() => setSelected(new Set())} className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-xs font-medium">
+                Clear
+              </button>
+            </div>
+          )}
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50">
+                <th className="px-4 py-2.5">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={(el) => { if (el) el.indeterminate = someSelected && !allSelected }}
+                    onChange={toggleAll}
+                    className="rounded border-gray-300 cursor-pointer"
+                  />
+                </th>
                 <th className="px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Company</th>
                 <th className="px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Shared investor</th>
                 <th className="px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Status</th>
@@ -530,6 +574,8 @@ export default function InvestorProspects() {
                 <ProspectRow
                   key={p.id}
                   prospect={p}
+                  selected={selected.has(p.id)}
+                  onToggle={() => toggleOne(p.id)}
                   onStatusChange={handleStatusChange}
                   onDelete={handleDelete}
                 />

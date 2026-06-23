@@ -114,6 +114,21 @@ router.patch('/:id', async (req, res) => {
   res.json(data)
 })
 
+// DELETE /bulk — must come before /:id
+router.delete('/bulk', async (req, res) => {
+  const { ids } = req.body
+  if (!Array.isArray(ids) || !ids.length) {
+    return res.status(400).json({ error: 'ids array is required' })
+  }
+  const { error } = await supabase
+    .from('investor_prospects')
+    .delete()
+    .in('id', ids)
+    .eq('uploaded_by', req.user.id)
+  if (error) return res.status(500).json({ error: error.message })
+  res.status(204).send()
+})
+
 router.delete('/:id', async (req, res) => {
   const { error } = await supabase
     .from('investor_prospects')

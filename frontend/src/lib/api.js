@@ -63,6 +63,7 @@ export const api = {
     bulk: (prospects) => request('/api/investor-prospects/bulk', { method: 'POST', body: { prospects } }),
     update: (id, body) => request(`/api/investor-prospects/${id}`, { method: 'PATCH', body }),
     delete: (id) => request(`/api/investor-prospects/${id}`, { method: 'DELETE' }),
+    bulkDelete: (ids) => request('/api/investor-prospects/bulk', { method: 'DELETE', body: { ids } }),
     recheck: () => request('/api/investor-prospects/recheck', { method: 'POST' }),
   },
   scan: {
