@@ -468,6 +468,7 @@ function ClosedLostTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate,
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge label={LOSS_REASON_LABELS[account.loss_reason]} color={LOSS_REASON_COLORS[account.loss_reason]} />
+                      {account.competitor && <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-200">{account.competitor}</span>}
                       <span className="text-xs text-gray-400">{account.contacts?.length || 0} contact{account.contacts?.length !== 1 ? 's' : ''}</span>
                       {account.rep_email && <span className="text-xs text-gray-400">· {account.rep_email}</span>}
                     </div>
@@ -573,7 +574,8 @@ function TerritoryTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate, 
                         <span title={account.shared_investor_names?.join(', ')} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-teal-50 text-teal-700 ring-1 ring-inset ring-teal-200 cursor-default">Shared investor</span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {account.competitor && <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-200">{account.competitor}</span>}
                       <span className="text-xs text-gray-400">{account.contacts?.length || 0} contact{account.contacts?.length !== 1 ? 's' : ''}</span>
                       {account.rep_email && <span className="text-xs text-gray-400">· {account.rep_email}</span>}
                       {account.last_signal_at && (
