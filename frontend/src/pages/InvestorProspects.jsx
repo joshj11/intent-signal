@@ -2,19 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { api } from '../lib/api.js'
 import Modal from '../components/Modal.jsx'
 
-const STATUS_OPTIONS = [
-  { value: 'uncontacted', label: 'Uncontacted' },
-  { value: 'intro_requested', label: 'Intro requested' },
-  { value: 'connected', label: 'Connected' },
-  { value: 'not_relevant', label: 'Not relevant' },
-]
-
-const STATUS_STYLES = {
-  uncontacted: 'bg-gray-100 text-gray-600',
-  intro_requested: 'bg-blue-50 text-blue-700',
-  connected: 'bg-green-50 text-green-700',
-  not_relevant: 'bg-red-50 text-red-600',
-}
 
 function timeAgo(dateStr) {
   if (!dateStr) return '—'
@@ -304,7 +291,7 @@ function CsvUploadModal({ onSuccess, onClose }) {
 
 // ─── Prospect table row ───────────────────────────────────────────────────────
 
-function ProspectRow({ prospect, selected, onToggle, onStatusChange, onDelete }) {
+function ProspectRow({ prospect, tab, selected, onToggle, onStatusChange, onDelete }) {
   const [expanded, setExpanded] = useState(false)
 
   return (
@@ -328,23 +315,12 @@ function ProspectRow({ prospect, selected, onToggle, onStatusChange, onDelete })
           <span className="text-xs text-gray-400">—</span>
         )}
       </td>
-      <td className="px-4 py-3">
-        <select
-          value={prospect.status}
-          onChange={(e) => onStatusChange(prospect.id, e.target.value)}
-          className={`text-xs font-medium rounded px-2 py-1 border-0 ring-1 ring-inset cursor-pointer focus:outline-none focus:ring-2 focus:ring-gray-900 ${STATUS_STYLES[prospect.status] || STATUS_STYLES.uncontacted} ring-transparent`}
-        >
-          {STATUS_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
-      </td>
       <td className="px-4 py-3 max-w-xs">
         {prospect.notes ? (
           <div>
             <p className={`text-sm text-gray-600 ${expanded ? '' : 'truncate'}`}>{prospect.notes}</p>
             {prospect.notes.length > 60 && (
-              <button onClick={() => setExpanded((v) => !v)} className="text-xs text-gray-400 hover:text-gray-600 mt-0.5">
+              <button onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v) }} className="text-xs text-gray-400 hover:text-gray-600 mt-0.5">
                 {expanded ? 'Less' : 'More'}
               </button>
             )}
@@ -355,7 +331,24 @@ function ProspectRow({ prospect, selected, onToggle, onStatusChange, onDelete })
       </td>
       <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">{timeAgo(prospect.uploaded_at)}</td>
       <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
-        <button onClick={() => onDelete(prospect.id)} className="text-xs text-gray-400 hover:text-red-600">Delete</button>
+        <div className="flex items-center justify-end gap-3">
+          {tab === 'uncontacted' && <>
+            <button onClick={() => onStatusChange(prospect.id, 'intro_requested')} className="text-xs font-medium text-blue-600 hover:text-blue-800 whitespace-nowrap">Request intro →</button>
+            <button onClick={() => onStatusChange(prospect.id, 'not_relevant')} className="text-xs text-gray-400 hover:text-gray-600">Not relevant</button>
+          </>}
+          {tab === 'intro_requested' && <>
+            <button onClick={() => onStatusChange(prospect.id, 'connected')} className="text-xs font-medium text-green-600 hover:text-green-800 whitespace-nowrap">Mark connected ✓</button>
+            <button onClick={() => onStatusChange(prospect.id, 'not_relevant')} className="text-xs text-gray-400 hover:text-gray-600">Not relevant</button>
+          </>}
+          {tab === 'connected' && <>
+            <button onClick={() => onStatusChange(prospect.id, 'not_relevant')} className="text-xs text-gray-400 hover:text-gray-600">Not relevant</button>
+            <button onClick={() => onDelete(prospect.id)} className="text-xs text-gray-400 hover:text-red-600">Delete</button>
+          </>}
+          {tab === 'not_relevant' && <>
+            <button onClick={() => onStatusChange(prospect.id, 'uncontacted')} className="text-xs text-gray-500 hover:text-gray-800">Restore</button>
+            <button onClick={() => onDelete(prospect.id)} className="text-xs text-gray-400 hover:text-red-600">Delete</button>
+          </>}
+        </div>
       </td>
     </tr>
   )
@@ -363,18 +356,25 @@ function ProspectRow({ prospect, selected, onToggle, onStatusChange, onDelete })
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
+const TABS = [
+  { value: 'uncontacted',    label: 'Uncontacted' },
+  { value: 'intro_requested', label: 'Intro Requested' },
+  { value: 'connected',      label: 'Connected' },
+  { value: 'not_relevant',   label: 'Not Relevant' },
+]
+
 export default function InvestorProspects() {
   const [prospects, setProspects] = useState([])
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState('uncontacted')
+  const [search, setSearch] = useState('')
+  const [filterSharedOnly, setFilterSharedOnly] = useState(false)
+  const [selected, setSelected] = useState(new Set())
   const [showAdd, setShowAdd] = useState(false)
   const [showUpload, setShowUpload] = useState(false)
   const [showRecheck, setShowRecheck] = useState(false)
   const [rechecking, setRechecking] = useState(false)
   const [recheckResult, setRecheckResult] = useState(null)
-  const [filterSharedOnly, setFilterSharedOnly] = useState(false)
-  const [filterStatus, setFilterStatus] = useState('')
-  const [search, setSearch] = useState('')
-  const [selected, setSelected] = useState(new Set())
 
   useEffect(() => { loadProspects() }, [])
 
@@ -389,6 +389,7 @@ export default function InvestorProspects() {
 
   async function handleStatusChange(id, status) {
     setProspects((prev) => prev.map((p) => p.id === id ? { ...p, status } : p))
+    setSelected((prev) => { const s = new Set(prev); s.delete(id); return s })
     try {
       await api.investorProspects.update(id, { status })
     } catch {
@@ -431,27 +432,23 @@ export default function InvestorProspects() {
   function downloadCSV() {
     const header = ['Company', 'Domain', 'Shared investor', 'Shared investor names', 'Status', 'Notes', 'Added']
     const rows = filtered.map((p) => [
-      p.company_name,
-      p.domain || '',
+      p.company_name, p.domain || '',
       p.has_shared_investor ? 'Yes' : 'No',
       (p.shared_investor_names || []).join('; '),
-      p.status,
-      p.notes || '',
+      p.status, p.notes || '',
       new Date(p.uploaded_at).toLocaleDateString('en-GB'),
     ])
     const csv = [header, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url
-    a.download = 'investor-prospects.csv'
-    a.click()
+    a.href = url; a.download = 'investor-prospects.csv'; a.click()
     URL.revokeObjectURL(url)
   }
 
-  const filtered = prospects
+  const tabProspects = prospects.filter((p) => p.status === activeTab)
+  const filtered = tabProspects
     .filter((p) => !filterSharedOnly || p.has_shared_investor)
-    .filter((p) => !filterStatus || p.status === filterStatus)
     .filter((p) => !search || p.company_name.toLowerCase().includes(search.toLowerCase()))
 
   const filteredIds = filtered.map((p) => p.id)
@@ -470,28 +467,41 @@ export default function InvestorProspects() {
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0 ml-4">
-          <button
-            onClick={() => setShowRecheck(true)}
-            className="px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50"
-          >
+          <button onClick={() => setShowRecheck(true)} className="px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50">
             Re-check investors
           </button>
-          <button
-            onClick={() => setShowAdd(true)}
-            className="px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50"
-          >
+          <button onClick={() => setShowAdd(true)} className="px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50">
             Add company
           </button>
-          <button
-            onClick={() => setShowUpload(true)}
-            className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700"
-          >
+          <button onClick={() => setShowUpload(true)} className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700">
             Upload CSV
           </button>
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Tabs */}
+      <div className="flex border-b border-gray-200 mb-4">
+        {TABS.map((tab) => {
+          const count = prospects.filter((p) => p.status === tab.value).length
+          const isActive = activeTab === tab.value
+          return (
+            <button
+              key={tab.value}
+              onClick={() => { setActiveTab(tab.value); setSelected(new Set()); setSearch('') }}
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors flex items-center gap-2 ${isActive ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+            >
+              {tab.label}
+              {count > 0 && (
+                <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${isActive ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Filter bar */}
       <div className="flex items-center gap-3 mb-4 flex-wrap">
         <input
           type="text"
@@ -500,14 +510,6 @@ export default function InvestorProspects() {
           onChange={(e) => setSearch(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 w-52"
         />
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-        >
-          <option value="">All statuses</option>
-          {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
         <label className="flex items-center gap-2 cursor-pointer select-none">
           <div
             onClick={() => setFilterSharedOnly((v) => !v)}
@@ -517,11 +519,7 @@ export default function InvestorProspects() {
           </div>
           <span className="text-sm text-gray-600">Shared investor only</span>
         </label>
-        <button
-          onClick={downloadCSV}
-          disabled={filtered.length === 0}
-          className="ml-auto text-sm text-gray-500 hover:text-gray-900 disabled:opacity-40"
-        >
+        <button onClick={downloadCSV} disabled={filtered.length === 0} className="ml-auto text-sm text-gray-500 hover:text-gray-900 disabled:opacity-40">
           Download CSV
         </button>
       </div>
@@ -535,7 +533,9 @@ export default function InvestorProspects() {
           <p className="text-sm text-gray-500">Upload a CSV or add a company to get started.</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-12 text-sm text-gray-400">No results match your filters.</div>
+        <div className="text-center py-12 text-sm text-gray-400">
+          {tabProspects.length === 0 ? `No prospects in ${TABS.find(t => t.value === activeTab)?.label}.` : 'No results match your search.'}
+        </div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
           {selected.size > 0 && (
@@ -563,7 +563,6 @@ export default function InvestorProspects() {
                 </th>
                 <th className="px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Company</th>
                 <th className="px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Shared investor</th>
-                <th className="px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Status</th>
                 <th className="px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Notes</th>
                 <th className="px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Added</th>
                 <th className="px-4 py-2.5" />
@@ -574,6 +573,7 @@ export default function InvestorProspects() {
                 <ProspectRow
                   key={p.id}
                   prospect={p}
+                  tab={activeTab}
                   selected={selected.has(p.id)}
                   onToggle={() => toggleOne(p.id)}
                   onStatusChange={handleStatusChange}
