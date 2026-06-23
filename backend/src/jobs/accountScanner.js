@@ -140,12 +140,11 @@ export async function scanAllAccounts({ triggeredBy = 'manual' } = {}) {
     log.warn({ skipped: skipped.map((s) => s.label) }, '[scanner] detectors skipped due to missing API keys')
   }
 
-  // Closed-lost active accounts only — territory accounts have no re-engagement signals to detect
+  // All active accounts (closed-lost and territory) — sorted oldest first
   const { data: accounts, error } = await supabase
     .from('accounts')
     .select('id, name')
     .eq('status', 'active')
-    .eq('account_type', 'closed_lost')
     .order('closed_lost_at', { ascending: true, nullsFirst: false })
 
   if (error) throw new Error(error.message)
