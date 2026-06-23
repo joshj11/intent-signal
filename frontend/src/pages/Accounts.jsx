@@ -332,11 +332,13 @@ function ClosedLostTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate,
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [sortByWeeks, setSortByWeeks] = useState(false)
+  const [sharedInvestorOnly, setSharedInvestorOnly] = useState(false)
   const [selected, setSelected] = useState(new Set())
 
   let filtered = accounts.filter((a) => {
     if (filter !== 'all' && a.loss_reason !== filter) return false
     if (search && !a.name.toLowerCase().includes(search.toLowerCase())) return false
+    if (sharedInvestorOnly && !a.has_shared_investor) return false
     return true
   })
 
@@ -371,6 +373,12 @@ function ClosedLostTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate,
             <button key={r.value} onClick={() => setFilter(r.value)} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${filter === r.value ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>{r.label}</button>
           ))}
         </div>
+        <button
+          onClick={() => setSharedInvestorOnly((v) => !v)}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium ${sharedInvestorOnly ? 'bg-teal-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+        >
+          Shared investor
+        </button>
       </div>
 
       {filtered.length === 0 ? (
@@ -452,9 +460,14 @@ function ClosedLostTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate,
 
 function TerritoryTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate, onAdd }) {
   const [search, setSearch] = useState('')
+  const [sharedInvestorOnly, setSharedInvestorOnly] = useState(false)
   const [selected, setSelected] = useState(new Set())
 
-  const filtered = accounts.filter((a) => !search || a.name.toLowerCase().includes(search.toLowerCase()))
+  const filtered = accounts.filter((a) => {
+    if (search && !a.name.toLowerCase().includes(search.toLowerCase())) return false
+    if (sharedInvestorOnly && !a.has_shared_investor) return false
+    return true
+  })
 
   const filteredIds = filtered.map((a) => a.id)
   const allSelected = filteredIds.length > 0 && filteredIds.every((id) => selected.has(id))
@@ -477,6 +490,12 @@ function TerritoryTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate, 
           placeholder="Search target accounts..."
           className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 w-56"
         />
+        <button
+          onClick={() => setSharedInvestorOnly((v) => !v)}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium ${sharedInvestorOnly ? 'bg-teal-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+        >
+          Shared investor
+        </button>
       </div>
 
       {filtered.length === 0 ? (
