@@ -74,7 +74,7 @@ export const api = {
     add: (name) => request('/api/competitors', { method: 'POST', body: { name } }),
   },
   runSignals: () => request('/api/run-signals', { method: 'POST' }),
-  scanAll: () => request('/api/scan/all', { method: 'POST', body: { confirm: true } }),
+  scanAll: (accountType = 'all') => request('/api/scan/all', { method: 'POST', body: { confirm: true, account_type: accountType } }),
   coverage: {
     careers: () => request('/api/coverage/careers'),
   },

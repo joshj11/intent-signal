@@ -132,7 +132,7 @@ export async function scanAccount(accountId, options = {}) {
  *
  * @returns {{ accounts_scanned, signals_found, proxycurl_credits_used, proxycurl_skipped, errors }}
  */
-export async function scanAllAccounts({ triggeredBy = 'manual' } = {}) {
+export async function scanAllAccounts({ triggeredBy = 'manual', accountType = 'all' } = {}) {
   const weeklyCapEnv = parseInt(process.env.PROXYCURL_WEEKLY_CAP ?? '50', 10)
   const proxyCreditTracker = { used: 0, skipped: 0, limit: weeklyCapEnv }
   const pageCache = {}
@@ -142,12 +142,9 @@ export async function scanAllAccounts({ triggeredBy = 'manual' } = {}) {
     log.warn({ skipped: skipped.map((s) => s.label) }, '[scanner] detectors skipped due to missing API keys')
   }
 
-  // All active accounts (closed-lost and territory) — sorted oldest first
-  const { data: accounts, error } = await supabase
-    .from('accounts')
-    .select('id, name')
-    .eq('status', 'active')
-    .order('closed_lost_at', { ascending: true, nullsFirst: false })
+  let query = supabase.from('accounts').select('id, name').eq('status', 'active')
+  if (accountType !== 'all') query = query.eq('account_type', accountType)
+  const { data: accounts, error } = await query.order('closed_lost_at', { ascending: true, nullsFirst: false })
 
   if (error) throw new Error(error.message)
   if (!accounts?.length) {

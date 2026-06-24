@@ -24,7 +24,8 @@ router.post('/all', async (req, res) => {
   }
 
   try {
-    const result = await scanAllAccounts({ triggeredBy: 'manual' })
+    const accountType = ['closed_lost', 'territory'].includes(req.body?.account_type) ? req.body.account_type : 'all'
+    const result = await scanAllAccounts({ triggeredBy: 'manual', accountType })
     log.info(
       { accounts_scanned: result.accounts_scanned, signals_found: result.signals_found,
         proxycurl_credits_used: result.proxycurl_credits_used, proxycurl_skipped: result.proxycurl_skipped,
