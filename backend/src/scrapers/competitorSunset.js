@@ -48,7 +48,10 @@ export async function checkForAccount(account, { recentSignals = [], competitors
 
   if (!match) return []
 
-  const competitor = detectCompetitor(match.title, allCompetitors) || detectCompetitor(match.description, allCompetitors) || 'A competitor'
+  const competitor = detectCompetitor(match.title, allCompetitors) || detectCompetitor(match.description, allCompetitors)
+
+  // If the account has a specific competitor set, only fire if the article is about that competitor
+  if (account.competitor && competitor && account.competitor.toLowerCase() !== competitor.toLowerCase()) return []
 
   try {
     const { data: signal } = await supabase
@@ -56,8 +59,8 @@ export async function checkForAccount(account, { recentSignals = [], competitors
       .insert({
         account_id: account.id,
         signal_type: SIGNAL_TYPE,
-        title: `${competitor} may be sunsetting: ${match.title}`,
-        detail: `${competitor} appears to be winding down a product or service. ${account.name} may urgently need a replacement.`,
+        title: `${competitor ?? 'A competitor'} may be sunsetting: ${match.title}`,
+        detail: `${competitor ?? 'A competitor'} appears to be winding down a product or service. ${account.name} may urgently need a replacement.`,
         source_url: match.url,
         raw_data: { competitor, headline: match.title, url: match.url },
       })

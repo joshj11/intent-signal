@@ -34,7 +34,10 @@ export async function checkForAccount(account, { recentSignals = [], competitors
   if (!fresh.length) return []
 
   const article = fresh[0]
-  const competitor = detectCompetitor(article.title, allCompetitors) || detectCompetitor(article.description, allCompetitors) || 'A competitor'
+  const competitor = detectCompetitor(article.title, allCompetitors) || detectCompetitor(article.description, allCompetitors)
+
+  // If the account has a specific competitor set, only fire if the article is about that competitor
+  if (account.competitor && competitor && account.competitor.toLowerCase() !== competitor.toLowerCase()) return []
 
   try {
     const { data: signal } = await supabase
@@ -42,8 +45,8 @@ export async function checkForAccount(account, { recentSignals = [], competitors
       .insert({
         account_id: account.id,
         signal_type: SIGNAL_TYPE,
-        title: `${competitor} in the news: ${article.title}`,
-        detail: `Negative press about ${competitor} may create a re-engagement opportunity at ${account.name}.`,
+        title: `${competitor ?? 'A competitor'} in the news: ${article.title}`,
+        detail: `Negative press about ${competitor ?? 'a competitor'} may create a re-engagement opportunity at ${account.name}.`,
         source_url: article.url,
         raw_data: { competitor, article, all_fresh_count: fresh.length },
       })
