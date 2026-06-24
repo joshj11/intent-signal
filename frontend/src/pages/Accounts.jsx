@@ -655,13 +655,23 @@ export default function Accounts() {
     if (!confirm(`Scan all ${accounts.length} account${accounts.length !== 1 ? 's' : ''}? This may take a few minutes.`)) return
     setScanning(true)
     setScanResult(null)
+    if (Notification.permission === 'default') await Notification.requestPermission()
     try {
       const result = await api.scanAll()
       setScanResult(result)
       setLastScan({ ran_at: new Date().toISOString(), ...result })
       await load()
+      if (Notification.permission === 'granted') {
+        new Notification('Signal scan complete', {
+          body: `${result.accounts_scanned} accounts scanned · ${result.signals_found} new signal${result.signals_found !== 1 ? 's' : ''} found`,
+          icon: '/favicon.ico',
+        })
+      }
     } catch (err) {
       setToast(`Scan failed: ${err.message}`)
+      if (Notification.permission === 'granted') {
+        new Notification('Signal scan failed', { body: err.message, icon: '/favicon.ico' })
+      }
     } finally {
       setScanning(false)
     }
