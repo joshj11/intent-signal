@@ -4,6 +4,7 @@ import { api } from '../lib/api.js'
 import { SIGNAL_TYPES, LOSS_REASON_COLORS } from '../lib/constants.js'
 import Badge from '../components/Badge.jsx'
 import EmptyState from '../components/EmptyState.jsx'
+import Modal from '../components/Modal.jsx'
 
 const LOSS_REASON_LABELS = {
   no_budget: 'No Budget', bad_timing: 'Bad Timing', no_priority: 'No Priority',
@@ -95,6 +96,8 @@ export default function SignalFeed() {
   const [signals, setSignals] = useState([])
   const [loading, setLoading] = useState(true)
   const [running, setRunning] = useState(false)
+  const [showScanModal, setShowScanModal] = useState(false)
+  const [scanResult, setScanResult] = useState(null)
   const [filter, setFilter] = useState('pending')
 
   const load = useCallback(async () => {
@@ -109,15 +112,29 @@ export default function SignalFeed() {
 
   useEffect(() => { load() }, [load])
 
-  async function handleRunSignals() {
+  async function handleScan(accountType) {
+    setShowScanModal(false)
     setRunning(true)
+    setScanResult(null)
+    if (Notification.permission === 'default') await Notification.requestPermission()
     try {
-      const result = await api.runSignals()
+      let result
+      if (accountType === 'investor_prospects') {
+        const r = await api.investorProspects.recheck()
+        result = { accounts_scanned: r.checked, signals_found: r.shared_investors_found }
+      } else {
+        result = await api.scanAll(accountType)
+      }
+      setScanResult(result)
       await load()
-      if (result.fired === 0) alert('Scan complete — no new signals found.')
-      else alert(`Scan complete — ${result.fired} new signal(s) fired.`)
+      if (Notification.permission === 'granted') {
+        new Notification('Signal scan complete', {
+          body: `${result.accounts_scanned} accounts scanned · ${result.signals_found} new signal${result.signals_found !== 1 ? 's' : ''} found`,
+          icon: '/favicon.ico',
+        })
+      }
     } catch (err) {
-      alert(`Error: ${err.message}`)
+      setScanResult({ error: err.message })
     } finally {
       setRunning(false)
     }
@@ -142,7 +159,7 @@ export default function SignalFeed() {
           </p>
         </div>
         <button
-          onClick={handleRunSignals}
+          onClick={() => setShowScanModal(true)}
           disabled={running}
           className="flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 disabled:opacity-50"
         >
@@ -198,6 +215,41 @@ export default function SignalFeed() {
             />
           ))}
         </div>
+      )}
+
+      {scanResult && (
+        <div className={`mt-4 rounded-xl border p-4 ${scanResult.error ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+          <div className="flex items-center justify-between">
+            {scanResult.error
+              ? <p className="text-sm text-red-700">Scan failed: {scanResult.error}</p>
+              : <p className="text-sm text-gray-900 font-medium">Scan complete — {scanResult.accounts_scanned} accounts scanned, {scanResult.signals_found} new signal{scanResult.signals_found !== 1 ? 's' : ''} found</p>
+            }
+            <button onClick={() => setScanResult(null)} className="text-xs text-gray-400 hover:text-gray-600 ml-4">Dismiss</button>
+          </div>
+        </div>
+      )}
+
+      {showScanModal && (
+        <Modal title="Run scan" onClose={() => setShowScanModal(false)}>
+          <p className="text-sm text-gray-500 mb-4">Choose which accounts to scan for new signals.</p>
+          <div className="space-y-2">
+            {[
+              { type: 'closed_lost', label: 'Closed Lost', description: 'Re-engagement signals — funding, hiring, champion moves, competitor news' },
+              { type: 'territory', label: 'Target Accounts', description: 'Buying signals — when to reach out to accounts you\'re tracking' },
+              { type: 'all', label: 'All Accounts', description: 'Scan everything in one go' },
+              { type: 'investor_prospects', label: 'Investor Prospects', description: 'Re-check shared investor matches across all prospects' },
+            ].map(({ type, label, description }) => (
+              <button
+                key={type}
+                onClick={() => handleScan(type)}
+                className="w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:border-gray-400 hover:bg-gray-50 transition-colors"
+              >
+                <div className="text-sm font-medium text-gray-900">{label}</div>
+                <p className="text-xs text-gray-500 mt-0.5">{description}</p>
+              </button>
+            ))}
+          </div>
+        </Modal>
       )}
     </div>
   )
