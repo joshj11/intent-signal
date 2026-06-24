@@ -870,16 +870,16 @@ export default function Accounts() {
                 count: accounts.filter((a) => a.account_type === 'territory').length,
               },
               {
-                type: 'all',
-                label: 'All Accounts',
-                description: 'Scan everything in one go',
-                count: accounts.length,
-              },
-              {
                 type: 'investor_prospects',
                 label: 'Investor Prospects',
                 description: 'Re-check shared investor matches across all prospects',
                 count: null,
+              },
+              {
+                type: 'all',
+                label: 'All Accounts',
+                description: 'Scan everything in one go',
+                count: accounts.length,
               },
             ].map(({ type, label, description, count }) => (
               <button

@@ -236,8 +236,8 @@ export default function SignalFeed() {
             {[
               { type: 'closed_lost', label: 'Closed Lost', description: 'Re-engagement signals — funding, hiring, champion moves, competitor news' },
               { type: 'territory', label: 'Target Accounts', description: 'Buying signals — when to reach out to accounts you\'re tracking' },
-              { type: 'all', label: 'All Accounts', description: 'Scan everything in one go' },
               { type: 'investor_prospects', label: 'Investor Prospects', description: 'Re-check shared investor matches across all prospects' },
+              { type: 'all', label: 'All Accounts', description: 'Scan everything in one go' },
             ].map(({ type, label, description }) => (
               <button
                 key={type}
