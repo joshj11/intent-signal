@@ -79,7 +79,6 @@ export default function Settings() {
 
   if (loading) return <div className="text-sm text-gray-400 py-10 text-center">Loading...</div>
 
-  const alertEmails = settings?.alert_emails || []
   const conferenceUrls = settings?.conference_urls || []
 
   return (
@@ -88,30 +87,6 @@ export default function Settings() {
         <h1 className="text-xl font-semibold text-gray-900">Settings</h1>
         <p className="text-sm text-gray-500 mt-0.5">Configure alerting, monitoring sources, and integrations.</p>
       </div>
-
-      {/* Alert emails */}
-      <Section
-        title="Alert emails"
-        description="These addresses receive signal alert emails. Separate multiple with commas."
-      >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            const val = e.target.emails.value
-            const parsed = val.split(',').map((s) => s.trim()).filter(Boolean)
-            save('alert_emails', parsed)
-          }}
-          className="flex gap-3"
-        >
-          <input
-            name="emails"
-            defaultValue={alertEmails.join(', ')}
-            placeholder="rep@company.com, manager@company.com"
-            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-          />
-          <SaveButton saving={saving.alert_emails} saved={saved.alert_emails} />
-        </form>
-      </Section>
 
       {/* Conference URLs */}
       <Section
