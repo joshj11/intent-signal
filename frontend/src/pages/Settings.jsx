@@ -243,7 +243,7 @@ export default function Settings() {
       {/* Proxycurl */}
       <Section
         title="Proxycurl (optional)"
-        description="Enables automated LinkedIn monitoring for champion job moves. ~£2/month. Leave blank to use manual reminders instead."
+        description="Enables automated LinkedIn monitoring for champion and blocker job moves."
       >
         <form
           onSubmit={async (e) => {
@@ -264,8 +264,8 @@ export default function Settings() {
           </div>
           <p className="text-xs text-gray-400">
             {settings?.proxycurl_enabled
-              ? 'Automated LinkedIn monitoring is enabled.'
-              : 'Manual mode: Signal will prompt you to check champions\' LinkedIn profiles every 30 days.'}
+              ? 'Automated mode: Signal checks LinkedIn profiles on every scan and fires a signal automatically when someone moves.'
+              : 'Manual mode: Signal can\'t check LinkedIn automatically without an API key. Instead, every 30 days it will create a "Check [Name]\'s LinkedIn" signal in your feed as a reminder to check manually. Add a key above to automate this.'}
           </p>
           <HowToGet steps={[
             { text: 'Go to', url: 'https://nubela.co/proxycurl', linkText: 'nubela.co/proxycurl' },
