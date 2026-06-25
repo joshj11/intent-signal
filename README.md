@@ -1,29 +1,29 @@
 # Signal — Intent Signal Tracker
 
-B2B sales tool that monitors closed-lost accounts for re-engagement signals. Tracks funding rounds, hiring surges, champion moves, competitor bad news, IPO filings, and more — then fires email alerts to reps.
+B2B sales tool that monitors closed-lost accounts and target prospects for re-engagement signals. Tracks funding rounds, hiring surges, champion moves, competitor bad news, IPO filings, and more — surfacing the right moment to reach back out.
+
+## Screenshot
+
+![Home page](docs/home-page.png)
 
 ## Stack
 
 - **Frontend**: React + Tailwind → Vercel
 - **Backend**: Node.js + Express → Render
 - **Database**: Supabase (Postgres + Auth)
-- **Alerts**: Nodemailer (via SendGrid SMTP)
-- **Enrichment**: Crunchbase API (configured in-app), Proxycurl (optional), Perigon (optional), Adzuna (optional)
-
-## Screenshots
-
-![Investor Prospects](docs/screenshots/investor-prospects.png)
-![How It Works](docs/screenshots/how-it-works.png)
+- **Enrichment**: Crunchbase, Proxycurl (optional), Perigon (optional), Adzuna (optional)
 
 ## Pages
 
 | Page | Route | Description |
 |------|-------|-------------|
-| Signal Feed | `/signals` | All signals across accounts, filterable by type |
-| Accounts | `/accounts` | List of tracked closed-lost accounts |
+| Home | `/` | Overview of what Signal does and setup guide |
+| Signal Feed | `/signals` | All signals across accounts, filterable by status |
+| Accounts | `/accounts` | Closed-lost and target accounts |
 | Account Detail | `/accounts/:id` | Signals, contacts, and scan history for one account |
-| Investor Prospects | `/investor-prospects` | Accounts with shared investors — warm intro leads |
-| Settings | `/settings` | API keys, alert config, conference list |
+| Investor Prospects | `/investor-prospects` | Accounts with shared Sisense investors — warm intro leads |
+| How it works | `/summary` | Signal type reference |
+| Settings | `/settings` | API keys and conference URLs |
 
 ## Running locally
 
@@ -67,55 +67,50 @@ npm run dev
 | `SUPABASE_URL` | Yes | Supabase project URL |
 | `SUPABASE_SERVICE_KEY` | Yes | Service role key (never expose in frontend) |
 | `SUPABASE_JWT_SECRET` | Yes | JWT secret — Settings → API → JWT Settings |
-| `SENDGRID_API_KEY` | Yes | SendGrid API key for alert emails |
-| `SENDGRID_FROM_EMAIL` | Yes | Verified sender address |
-| `ALERT_EMAILS` | Yes | Comma-separated rep emails to receive alerts |
 | `FRONTEND_URL` | Yes | Frontend origin for CORS (default: `http://localhost:5173`) |
-| `CRUNCHBASE_API_KEY` | No | Crunchbase API key — alternative to configuring it in the Settings screen |
-| `OUR_CRUNCHBASE_PERMALINK` | No | Your company's Crunchbase permalink — used for shared investor enrichment at import |
-| `PROXYCURL_API_KEY` | No | Enables LinkedIn monitoring (champion moves, blocker departures) |
+| `OUR_CRUNCHBASE_PERMALINK` | No | Sisense's Crunchbase permalink — used for shared investor matching at import |
 | `PROXYCURL_WEEKLY_CAP` | No | Max Proxycurl credits per weekly scan (default: `50`) |
 | `PROXYCURL_MANUAL_CAP` | No | Max Proxycurl credits per manual scan (default: `10`) |
-| `PERIGON_API_KEY` | No | Enables competitor news signals |
-| `ADZUNA_APP_ID` | No | Enables economic buyer signals (job postings) |
-| `ADZUNA_APP_KEY` | No | Enables economic buyer signals |
 | `ADZUNA_MARKET` | No | Adzuna job market country code (default: `gb`) |
 
-The **Crunchbase API key** can be configured either in the app's Settings screen (stored in the `settings` DB table) or via the `CRUNCHBASE_API_KEY` env var. The Settings screen takes precedence.
+API keys for Crunchbase, Proxycurl, Perigon, and Adzuna are configured via the in-app Settings screen and stored in the `settings` DB table per user.
 
 ## Authentication
 
-Signal uses Supabase Auth (email + password). Users must confirm their email before signing in. All routes are login-protected.
-
-To create your first account: sign up via the app's login page, or create a user directly in the Supabase dashboard under **Authentication → Users**.
+Signal uses Supabase Auth (email + password). All routes are login-protected. To create your first account: sign up via the login page, or create a user directly in the Supabase dashboard under **Authentication → Users**.
 
 ## Database
 
-Apply migrations from `backend/supabase/schema.sql` in the Supabase SQL editor.
+Apply migrations in order from `backend/supabase/` in the Supabase SQL editor (`migration_001.sql` through the latest).
 
 ## Signal sources
 
-11 detectors run on a weekly cron (Monday 07:00 UTC) and can also be triggered manually per-account or across all accounts.
+11 detectors run on a weekly cron (Monday 07:00 UTC) and can also be triggered manually. 8 run in parallel per account; 3 Proxycurl detectors run sequentially to respect credit limits.
 
-| Signal | Source |
-|--------|--------|
-| `funding_round` | Crunchbase API |
-| `ma_activity` | Crunchbase API |
-| `new_hire` | Account careers page (scraped) |
-| `conference_attendance` | Conference attendee lists (scraped) |
-| `champion_move` | Proxycurl LinkedIn API |
-| `champion_new_company` | Proxycurl LinkedIn API |
-| `blocker_departed` | Proxycurl LinkedIn API |
-| `competitor_bad_news` | Perigon News API |
-| `competitor_sunset` | Perigon News API + RSS |
-| `new_economic_buyer` | Adzuna Jobs API |
-| `ipo_filing` | SEC EDGAR (free) |
+| Signal | Source | Notes |
+|--------|--------|-------|
+| `funding_round` | Crunchbase API | |
+| `ipo_filing` | Crunchbase API | |
+| `new_hire` | Account careers page (scraped) + Adzuna | |
+| `new_economic_buyer` | Adzuna Jobs API | Senior finance/revenue hires |
+| `conference_attendance` | Conference pages (configured in Settings) | |
+| `champion_move` | Proxycurl LinkedIn API | Falls back to 30-day manual reminder |
+| `blocker_departed` | Proxycurl LinkedIn API | Falls back to 30-day manual reminder |
+| `competitor_bad_news` | Perigon News API | Uses per-account competitor or full Sisense list |
+| `competitor_sunset` | Perigon News API | Uses per-account competitor or full Sisense list |
+| `shared_investor` | Crunchbase API | Cross-references Sisense investor list |
 
-See [`docs/signal-sources.md`](docs/signal-sources.md) for API details, scan execution model, Proxycurl credit rules, and deduplication logic.
+### Competitors
+
+Sisense's competitor list is hardcoded in `backend/src/lib/sisenseCompetitors.js` (Tableau, Power BI, Looker, Qlik, ThoughtSpot, MicroStrategy, Domo, GoodData, Omni, QuickSight, Embeddable, Luzmo, Sigma). Users can add custom competitors per-account; these are stored in the `custom_competitors` table and merged with the hardcoded list at scan time.
+
+### Proxycurl manual mode
+
+Without a Proxycurl API key, Signal creates a "Check [Name]'s LinkedIn" reminder signal every 30 days for each champion and blocker contact that has a LinkedIn URL. This ensures job moves are still caught manually.
 
 ## Scan API
 
-| Endpoint | Description |
-|----------|-------------|
-| `POST /api/accounts/:id/scan` | Scan a single account |
-| `POST /api/scan/all` | Scan all active accounts (requires `{ "confirm": true }` body) |
+| Endpoint | Body | Description |
+|----------|------|-------------|
+| `POST /api/accounts/:id/scan` | — | Scan a single account |
+| `POST /api/scan/all` | `{ confirm: true, account_type: "closed_lost" \| "territory" \| "all" }` | Scan accounts by type |
