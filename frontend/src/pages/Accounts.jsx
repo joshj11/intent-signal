@@ -63,7 +63,7 @@ function AccountForm({ initial, defaultType, onSave, onClose }) {
       domain: '',
       careers_url: '',
       loss_reason: 'no_budget',
-      rep_email: '',
+
       notes: '',
       closed_lost_at: new Date().toISOString().split('T')[0],
       competitor: '',
@@ -216,16 +216,6 @@ function AccountForm({ initial, defaultType, onSave, onClose }) {
         </div>
       )}
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Rep email</label>
-        <input
-          type="email"
-          value={form.rep_email}
-          onChange={set('rep_email')}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-          placeholder="rep@company.com"
-        />
-      </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
         <textarea
@@ -481,7 +471,6 @@ function ClosedLostTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate,
                       <Badge label={LOSS_REASON_LABELS[account.loss_reason]} color={LOSS_REASON_COLORS[account.loss_reason]} />
                       {account.competitor && <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-200">{account.competitor}</span>}
                       <span className="text-xs text-gray-400">{account.contacts?.length || 0} contact{account.contacts?.length !== 1 ? 's' : ''}</span>
-                      {account.rep_email && <span className="text-xs text-gray-400">· {account.rep_email}</span>}
                       {account.last_contacted_at
                         ? <span className="text-xs text-gray-400">· contacted {Math.floor((Date.now() - new Date(account.last_contacted_at)) / (1000 * 60 * 60 * 24))}d ago</span>
                         : <span className="text-xs text-gray-300">· never contacted</span>}
@@ -591,7 +580,6 @@ function TerritoryTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate, 
                     <div className="flex items-center gap-2 flex-wrap">
                       {account.competitor && <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-200">{account.competitor}</span>}
                       <span className="text-xs text-gray-400">{account.contacts?.length || 0} contact{account.contacts?.length !== 1 ? 's' : ''}</span>
-                      {account.rep_email && <span className="text-xs text-gray-400">· {account.rep_email}</span>}
                       {account.last_signal_at && (
                         <span className="text-xs text-gray-400">· last signal {Math.floor((Date.now() - new Date(account.last_signal_at)) / (1000 * 60 * 60 * 24))}d ago</span>
                       )}

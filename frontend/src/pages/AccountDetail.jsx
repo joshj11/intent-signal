@@ -217,7 +217,6 @@ export default function AccountDetail() {
                 <Badge label={LOSS_REASON_LABELS[account.loss_reason]} color={LOSS_REASON_COLORS[account.loss_reason]} />
               )}
               {account.domain && <span className="text-sm text-gray-400">{account.domain}</span>}
-              {account.rep_email && <span className="text-sm text-gray-400">· {account.rep_email}</span>}
               {!isTerritory && account.closed_lost_at && (
                 <span className="text-sm text-gray-400">
                   · closed {new Date(account.closed_lost_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
