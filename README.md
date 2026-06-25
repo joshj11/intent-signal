@@ -69,8 +69,8 @@ npm run dev
 | `SUPABASE_JWT_SECRET` | Yes | JWT secret — Settings → API → JWT Settings |
 | `FRONTEND_URL` | Yes | Frontend origin for CORS (default: `http://localhost:5173`) |
 | `OUR_CRUNCHBASE_PERMALINK` | No | Sisense's Crunchbase permalink — used for shared investor matching at import |
-| `PROXYCURL_WEEKLY_CAP` | No | Max Proxycurl credits per weekly scan (default: `50`) |
-| `PROXYCURL_MANUAL_CAP` | No | Max Proxycurl credits per manual scan (default: `10`) |
+| `PROXYCURL_WEEKLY_CAP` | No | Max Proxycurl credits per full scan (default: `50`) |
+| `PROXYCURL_MANUAL_CAP` | No | Max Proxycurl credits per single-account scan (default: `10`) |
 | `ADZUNA_MARKET` | No | Adzuna job market country code (default: `gb`) |
 
 API keys for Crunchbase, Proxycurl, Perigon, and Adzuna are configured via the in-app Settings screen and stored in the `settings` DB table per user.
@@ -115,3 +115,4 @@ Without a Proxycurl API key, Signal creates a "Check [Name]'s LinkedIn" reminder
 | `POST /api/accounts/:id/scan` | — | Scan a single account |
 | `POST /api/scan/all` | `{ confirm: true, account_type: "closed_lost" \| "territory" \| "all" }` | Scan accounts by type — returns 409 if a scan is already running |
 | `GET /api/scan/progress` | — | Returns `{ inProgress, current, total, currentAccount }` — poll during a scan for live progress |
+| `GET /api/scan/runs` | `?limit=N` | Returns recent scan history (default 10, max 50) |
