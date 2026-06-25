@@ -55,7 +55,7 @@ function isDormant(account) {
   return daysSince > DORMANCY_DAYS
 }
 
-function AccountForm({ initial, defaultType, onSave, onClose }) {
+export function AccountForm({ initial, defaultType, onSave, onClose }) {
   const [form, setForm] = useState(
     initial || {
       account_type: defaultType || 'closed_lost',
@@ -480,7 +480,7 @@ function ClosedLostTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate,
                       }
                       {account.last_contacted_at
                         ? <span className="text-xs text-gray-400">· contacted {Math.floor((Date.now() - new Date(account.last_contacted_at)) / (1000 * 60 * 60 * 24))}d ago</span>
-                        : <span className="text-xs text-gray-300">· never contacted</span>}
+                        : null}
                     </div>
                   </div>
                   <div className="text-sm text-gray-500 shrink-0 w-24 text-right">{weeks !== null ? `${weeks}w` : '—'}</div>
@@ -595,7 +595,7 @@ function TerritoryTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate, 
                       )}
                       {account.last_contacted_at
                         ? <span className="text-xs text-gray-400">· contacted {Math.floor((Date.now() - new Date(account.last_contacted_at)) / (1000 * 60 * 60 * 24))}d ago</span>
-                        : <span className="text-xs text-gray-300">· never contacted</span>}
+                        : null}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>

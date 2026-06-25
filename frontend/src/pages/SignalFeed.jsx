@@ -41,7 +41,7 @@ function SignalCard({ signal, onAlert, onIgnore }) {
                 {account.name}
               </Link>
             )}
-            {account && (
+            {account?.loss_reason && (
               <Badge
                 label={account.loss_reason === 'competitor_won' && account.competitor
                   ? `Competitor Won · ${account.competitor}`

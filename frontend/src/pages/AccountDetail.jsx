@@ -6,6 +6,7 @@ import Badge from '../components/Badge.jsx'
 import Modal from '../components/Modal.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import Toast from '../components/Toast.jsx'
+import { AccountForm } from './Accounts.jsx'
 
 function timeAgo(dateStr) {
   if (!dateStr) return null
@@ -146,6 +147,7 @@ export default function AccountDetail() {
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
   const [editing, setEditing] = useState(null)
+  const [editingAccount, setEditingAccount] = useState(false)
   const [scanning, setScanning] = useState(false)
   const [toast, setToast] = useState(null)
 
@@ -233,11 +235,18 @@ export default function AccountDetail() {
             )}
           </div>
           <div className="flex flex-col items-end gap-1.5 shrink-0 ml-6">
-            <button
-              onClick={handleScan}
-              disabled={scanning}
-              className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <div className="flex gap-2">
+              <button
+                onClick={() => setEditingAccount(true)}
+                className="px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50"
+              >
+                Edit
+              </button>
+              <button
+                onClick={handleScan}
+                disabled={scanning}
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
               {scanning ? (
                 <>
                   <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -247,7 +256,8 @@ export default function AccountDetail() {
                   Scanning...
                 </>
               ) : 'Run scan'}
-            </button>
+              </button>
+            </div>
             <span className="text-xs text-gray-400">
               {account.last_scanned_at
                 ? `Last scanned: ${timeAgo(account.last_scanned_at)}`
@@ -364,6 +374,19 @@ export default function AccountDetail() {
             initial={editing}
             onSave={(form) => api.contacts.update(editing.id, form).then(() => load())}
             onClose={() => setEditing(null)}
+          />
+        </Modal>
+      )}
+
+      {editingAccount && (
+        <Modal title="Edit account" onClose={() => setEditingAccount(false)}>
+          <AccountForm
+            initial={account}
+            onSave={async (form) => {
+              await api.accounts.update(account.id, form)
+              await load()
+            }}
+            onClose={() => setEditingAccount(false)}
           />
         </Modal>
       )}
