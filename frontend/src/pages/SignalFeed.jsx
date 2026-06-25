@@ -166,7 +166,8 @@ export default function SignalFeed() {
 
       pollInterval = setInterval(async () => {
         try {
-          const next = await api.scan.progress()
+          const [next, data] = await Promise.all([api.scan.progress(), api.signals.list()])
+          setSignals(data)
           if (next.inProgress) {
             setProgress(next)
           } else {
@@ -193,7 +194,8 @@ export default function SignalFeed() {
     if (accountType !== 'investor_prospects') {
       pollInterval = setInterval(async () => {
         try {
-          const p = await api.scan.progress()
+          const [p, data] = await Promise.all([api.scan.progress(), api.signals.list()])
+          setSignals(data)
           if (p.inProgress) setProgress(p)
         } catch {}
       }, 2000)
