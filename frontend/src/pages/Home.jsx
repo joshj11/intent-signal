@@ -33,7 +33,7 @@ const SETUP_STEPS = [
   {
     number: '5',
     title: 'Add investor prospects',
-    description: 'Upload a list of target accounts outside your territory. Signal will cross-reference them against Sisense\'s investor portfolios to find warm intro opportunities.',
+    description: 'Upload a list of target accounts you want warm introductions to. Signal will cross-reference them against Sisense\'s investor portfolios to find shared investors who can make the intro.',
     cta: 'Go to Investor Prospects',
     href: '/investor-prospects',
   },
@@ -105,7 +105,7 @@ const SIGNAL_TYPES = [
   },
   {
     label: 'Shared Investor',
-    description: 'A mutual investor can make a warm introduction to a prospect outside your territory.',
+    description: 'A mutual investor can make a warm introduction to any prospect you\'re trying to reach.',
     color: 'bg-teal-100 text-teal-700',
     requires: 'Crunchbase API',
     how: 'Signal cross-references a prospect\'s investors (via Crunchbase) against Sisense\'s own investor list. If there\'s an overlap, it surfaces on the Investor Prospects page — that investor can make a warm introduction on your behalf.',
