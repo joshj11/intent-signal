@@ -20,6 +20,7 @@ const TITLE_KEYWORDS = [
   'fullstack engineer', 'machine learning', 'ml engineer', 'engineering manager',
   'head of engineering', 'vp engineering', 'vp of engineering',
   'infrastructure engineer', 'cloud engineer', 'solutions engineer',
+  'senior engineer', 'staff engineer', 'principal engineer', 'junior engineer', 'lead engineer',
 ]
 
 const JOB_SELECTORS = ['.jobs', '.careers', '.positions', '#jobs', '[data-job]', 'main']
