@@ -51,7 +51,7 @@ const SIGNAL_TYPES = [
     label: 'Engineering Hiring',
     description: 'Active technical hiring signals growth. Scaling teams need tooling to match.',
     color: 'bg-violet-100 text-violet-700',
-    requires: 'Adzuna API',
+    requires: 'Adzuna API + account careers page URL',
     how: 'Signal searches Adzuna for active engineering job postings at the company. If 3 or more open roles are found, it fires a signal — indicating the team is scaling and likely evaluating new tooling.',
   },
   {
