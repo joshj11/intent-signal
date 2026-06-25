@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Link, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabaseClient.js'
 
@@ -17,7 +17,7 @@ export default function Layout() {
     <div className="min-h-screen flex flex-col">
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center gap-8">
-          <span className="font-semibold text-gray-900 tracking-tight">Signal</span>
+          <Link to="/" className="font-semibold text-gray-900 tracking-tight hover:text-gray-700 shrink-0">Signal</Link>
           <nav className="flex gap-1 flex-1">
             {navItems.map((item) => (
               <NavLink

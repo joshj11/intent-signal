@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 import Layout from './components/Layout.jsx'
 import Login from './pages/Login.jsx'
+import Home from './pages/Home.jsx'
 import Accounts from './pages/Accounts.jsx'
 import AccountDetail from './pages/AccountDetail.jsx'
 import SignalFeed from './pages/SignalFeed.jsx'
@@ -45,7 +46,7 @@ export default function App() {
 
 function LoginGate() {
   const { session } = useAuth()
-  if (session) return <Navigate to="/accounts" replace />
+  if (session) return <Navigate to="/" replace />
   return <Login />
 }
 
@@ -63,7 +64,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route index element={<Navigate to="/accounts" replace />} />
+        <Route index element={<Home />} />
         <Route path="accounts" element={<Accounts />} />
         <Route path="accounts/:id" element={<AccountDetail />} />
         <Route path="signals" element={<SignalFeed />} />
