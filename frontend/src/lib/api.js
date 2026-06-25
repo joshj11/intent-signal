@@ -70,6 +70,7 @@ export const api = {
   },
   scan: {
     runs: (limit = 1) => request(`/api/scan/runs?limit=${limit}`),
+    progress: () => request('/api/scan/progress'),
   },
   competitors: {
     list: () => request('/api/competitors'),

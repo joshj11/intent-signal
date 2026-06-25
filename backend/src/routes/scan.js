@@ -6,6 +6,12 @@ import { scanAccount, scanAllAccounts } from '../jobs/accountScanner.js'
 const router = Router()
 
 let scanInProgress = false
+let scanProgress = { current: 0, total: 0, currentAccount: null }
+
+// GET /api/scan/progress
+router.get('/progress', (req, res) => {
+  res.json({ inProgress: scanInProgress, ...scanProgress })
+})
 
 // GET /api/scan/runs — recent scan history
 router.get('/runs', async (req, res) => {
@@ -30,9 +36,16 @@ router.post('/all', async (req, res) => {
   }
 
   scanInProgress = true
+  scanProgress = { current: 0, total: 0, currentAccount: null }
   try {
     const accountType = ['closed_lost', 'territory'].includes(req.body?.account_type) ? req.body.account_type : 'all'
-    const result = await scanAllAccounts({ triggeredBy: 'manual', accountType })
+    const result = await scanAllAccounts({
+      triggeredBy: 'manual',
+      accountType,
+      onProgress: (current, total, currentAccount) => {
+        scanProgress = { current, total, currentAccount }
+      },
+    })
     log.info(
       { accounts_scanned: result.accounts_scanned, signals_found: result.signals_found,
         proxycurl_credits_used: result.proxycurl_credits_used, proxycurl_skipped: result.proxycurl_skipped,
@@ -51,6 +64,7 @@ router.post('/all', async (req, res) => {
     res.status(500).json({ error: err.message })
   } finally {
     scanInProgress = false
+    scanProgress = { current: 0, total: 0, currentAccount: null }
   }
 })
 

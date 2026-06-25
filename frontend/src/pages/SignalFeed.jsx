@@ -96,10 +96,12 @@ export default function SignalFeed() {
   const [signals, setSignals] = useState([])
   const [loading, setLoading] = useState(true)
   const [running, setRunning] = useState(false)
+  const [progress, setProgress] = useState(null)
   const [acknowledging, setAcknowledging] = useState(false)
   const [showScanModal, setShowScanModal] = useState(false)
   const [scanResult, setScanResult] = useState(null)
   const [filter, setFilter] = useState('pending')
+  const [search, setSearch] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -116,8 +118,20 @@ export default function SignalFeed() {
   async function handleScan(accountType) {
     setShowScanModal(false)
     setRunning(true)
+    setProgress(null)
     setScanResult(null)
     if (Notification.permission === 'default') await Notification.requestPermission()
+
+    let pollInterval = null
+    if (accountType !== 'investor_prospects') {
+      pollInterval = setInterval(async () => {
+        try {
+          const p = await api.scan.progress()
+          if (p.inProgress) setProgress(p)
+        } catch {}
+      }, 2000)
+    }
+
     try {
       let result
       if (accountType === 'investor_prospects') {
@@ -137,14 +151,17 @@ export default function SignalFeed() {
     } catch (err) {
       setScanResult({ error: err.message })
     } finally {
+      clearInterval(pollInterval)
       setRunning(false)
+      setProgress(null)
     }
   }
 
   const filtered = signals.filter((s) => {
-    if (filter === 'pending') return !s.alerted && !s.ignored
-    if (filter === 'alerted') return s.alerted
-    if (filter === 'ignored') return s.ignored
+    if (filter === 'pending' && (s.alerted || s.ignored)) return false
+    if (filter === 'alerted' && !s.alerted) return false
+    if (filter === 'ignored' && !s.ignored) return false
+    if (search && !s.accounts?.name?.toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
 
@@ -169,21 +186,37 @@ export default function SignalFeed() {
             {pendingCount} pending signal{pendingCount !== 1 ? 's' : ''}
           </p>
         </div>
-        <button
-          onClick={() => setShowScanModal(true)}
-          disabled={running}
-          className="flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 disabled:opacity-50"
-        >
-          {running ? (
-            <>
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-              Scanning...
-            </>
-          ) : 'Run scan now'}
-        </button>
+        <div className="flex flex-col items-end gap-1">
+          <button
+            onClick={() => setShowScanModal(true)}
+            disabled={running}
+            className="flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 disabled:opacity-50"
+          >
+            {running ? (
+              <>
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Scanning...
+              </>
+            ) : 'Run scan now'}
+          </button>
+          {progress?.total > 0 && (
+            <p className="text-xs text-gray-400">
+              {progress.current} / {progress.total} — {progress.currentAccount}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 mb-4">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by account..."
+          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 w-48"
+        />
       </div>
 
       <div className="flex items-center justify-between mb-4">

@@ -132,7 +132,7 @@ export async function scanAccount(accountId, options = {}) {
  *
  * @returns {{ accounts_scanned, signals_found, proxycurl_credits_used, proxycurl_skipped, errors }}
  */
-export async function scanAllAccounts({ triggeredBy = 'manual', accountType = 'all' } = {}) {
+export async function scanAllAccounts({ triggeredBy = 'manual', accountType = 'all', onProgress } = {}) {
   const weeklyCapEnv = parseInt(process.env.PROXYCURL_WEEKLY_CAP ?? '50', 10)
   const proxyCreditTracker = { used: 0, skipped: 0, limit: weeklyCapEnv }
   const pageCache = {}
@@ -158,6 +158,7 @@ export async function scanAllAccounts({ triggeredBy = 'manual', accountType = 'a
 
   for (let i = 0; i < accounts.length; i++) {
     if (i > 0) await sleep(500)
+    onProgress?.(i + 1, accounts.length, accounts[i].name)
     try {
       const result = await scanAccount(accounts[i].id, { proxyCreditTracker, pageCache, competitors })
       accountsScanned++
