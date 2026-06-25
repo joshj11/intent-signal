@@ -3,24 +3,24 @@ import { Link } from 'react-router-dom'
 const SETUP_STEPS = [
   {
     number: '1',
+    title: 'Configure your signal sources',
+    description: 'Add API keys for Perigon (competitor news) and Adzuna (economic buyer signals). Proxycurl is optional — without it, Signal reminds you to check LinkedIn manually every 30 days.',
+    cta: 'Go to Settings',
+    href: '/settings',
+  },
+  {
+    number: '2',
     title: 'Import your closed-lost accounts',
     description: 'Upload a CSV of accounts you\'ve lost or add them manually. Include the domain, loss reason, and closed date for best results.',
     cta: 'Go to Accounts',
     href: '/accounts',
   },
   {
-    number: '2',
+    number: '3',
     title: 'Add contacts to each account',
     description: 'Tag champions (your internal advocates) and blockers (deal killers). Add LinkedIn URLs to enable job move detection.',
     cta: 'Go to Accounts',
     href: '/accounts',
-  },
-  {
-    number: '3',
-    title: 'Configure your signal sources',
-    description: 'Add API keys for Perigon (competitor news) and Adzuna (economic buyer signals). Proxycurl is optional — without it, Signal reminds you to check LinkedIn manually every 30 days.',
-    cta: 'Go to Settings',
-    href: '/settings',
   },
   {
     number: '4',
