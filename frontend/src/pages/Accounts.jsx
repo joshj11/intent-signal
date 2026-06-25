@@ -468,8 +468,12 @@ function ClosedLostTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate,
                       )}
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <Badge label={LOSS_REASON_LABELS[account.loss_reason]} color={LOSS_REASON_COLORS[account.loss_reason]} />
-                      {account.competitor && <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-200">{account.competitor}</span>}
+                      <Badge
+                        label={account.loss_reason === 'competitor_won' && account.competitor
+                          ? `Competitor Won · ${account.competitor}`
+                          : LOSS_REASON_LABELS[account.loss_reason]}
+                        color={LOSS_REASON_COLORS[account.loss_reason]}
+                      />
                       {account.contacts?.length > 0
                         ? <span className="text-xs text-gray-400">{account.contacts.length} contact{account.contacts.length !== 1 ? 's' : ''}</span>
                         : <Link to={`/accounts/${account.id}`} onClick={(e) => e.stopPropagation()} className="text-xs text-amber-600 hover:underline">+ Add contacts</Link>
