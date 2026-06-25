@@ -21,6 +21,8 @@ const TITLE_KEYWORDS = [
   'head of engineering', 'vp engineering', 'vp of engineering',
   'infrastructure engineer', 'cloud engineer', 'solutions engineer',
   'senior engineer', 'staff engineer', 'principal engineer', 'junior engineer', 'lead engineer',
+  'head of product', 'vp product', 'vp of product', 'director of product', 'chief product officer', 'cpo',
+  'senior product manager', 'lead product manager', 'group product manager',
 ]
 
 const JOB_SELECTORS = ['.jobs', '.careers', '.positions', '#jobs', '[data-job]', 'main']
