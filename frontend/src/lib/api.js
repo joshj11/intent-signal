@@ -50,6 +50,7 @@ export const api = {
       const qs = new URLSearchParams(params).toString()
       return request(`/api/signals${qs ? `?${qs}` : ''}`)
     },
+    pendingCount: () => request('/api/signals/pending-count'),
     alert: (id) => request(`/api/signals/${id}/alert`, { method: 'POST' }),
     ignore: (id) => request(`/api/signals/${id}/ignore`, { method: 'POST' }),
   },

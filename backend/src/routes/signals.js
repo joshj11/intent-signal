@@ -3,6 +3,18 @@ import supabase from '../lib/supabase.js'
 
 const router = Router()
 
+// GET /api/signals/pending-count
+router.get('/pending-count', async (req, res) => {
+  const { count, error } = await supabase
+    .from('signals')
+    .select('*, accounts!inner(user_id)', { count: 'exact', head: true })
+    .eq('accounts.user_id', req.user.id)
+    .eq('alerted', false)
+    .eq('ignored', false)
+  if (error) return res.status(500).json({ error: error.message })
+  res.json({ count })
+})
+
 // GET /api/signals?limit=50&offset=0
 router.get('/', async (req, res) => {
   const limit = parseInt(req.query.limit) || 50

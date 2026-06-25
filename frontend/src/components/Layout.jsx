@@ -1,11 +1,13 @@
-import { NavLink, Link, Outlet } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { NavLink, Link, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabaseClient.js'
+import { api } from '../lib/api.js'
 
 const navItems = [
   { to: '/', label: 'Home', end: true },
   { to: '/accounts', label: 'Accounts' },
-  { to: '/signals', label: 'Signal Feed' },
+  { to: '/signals', label: 'Signal Feed', badge: true },
   { to: '/investor-prospects', label: 'Investor prospects' },
   { to: '/summary', label: 'How it works' },
   { to: '/settings', label: 'Settings' },
@@ -13,6 +15,14 @@ const navItems = [
 
 export default function Layout() {
   const { user } = useAuth()
+  const location = useLocation()
+  const [pendingCount, setPendingCount] = useState(0)
+
+  useEffect(() => {
+    api.signals.pendingCount()
+      .then(({ count }) => setPendingCount(count ?? 0))
+      .catch(() => {})
+  }, [location.pathname])
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -26,7 +36,7 @@ export default function Layout() {
                 to={item.to}
                 end={item.end}
                 className={({ isActive }) =>
-                  `px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  `relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                     isActive
                       ? 'bg-gray-100 text-gray-900'
                       : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
@@ -34,6 +44,11 @@ export default function Layout() {
                 }
               >
                 {item.label}
+                {item.badge && pendingCount > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-semibold leading-none">
+                    {pendingCount > 99 ? '99+' : pendingCount}
+                  </span>
+                )}
               </NavLink>
             ))}
           </nav>

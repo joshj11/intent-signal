@@ -5,6 +5,8 @@ import { scanAccount, scanAllAccounts } from '../jobs/accountScanner.js'
 
 const router = Router()
 
+let scanInProgress = false
+
 // GET /api/scan/runs — recent scan history
 router.get('/runs', async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit ?? '10', 10), 50)
@@ -23,6 +25,11 @@ router.post('/all', async (req, res) => {
     return res.status(400).json({ error: 'Missing confirmation. Pass { "confirm": true } in the request body.' })
   }
 
+  if (scanInProgress) {
+    return res.status(409).json({ error: 'A scan is already in progress. Please wait for it to finish.' })
+  }
+
+  scanInProgress = true
   try {
     const accountType = ['closed_lost', 'territory'].includes(req.body?.account_type) ? req.body.account_type : 'all'
     const result = await scanAllAccounts({ triggeredBy: 'manual', accountType })
@@ -42,6 +49,8 @@ router.post('/all', async (req, res) => {
     })
   } catch (err) {
     res.status(500).json({ error: err.message })
+  } finally {
+    scanInProgress = false
   }
 })
 
