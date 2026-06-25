@@ -236,6 +236,17 @@ function AccountForm({ initial, defaultType, onSave, onClose }) {
           placeholder={isClosedLost ? 'Why did we lose this? What would change the situation?' : 'ICP fit notes, research context...'}
         />
       </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Last contacted <span className="text-gray-400 font-normal">(optional)</span>
+        </label>
+        <input
+          type="date"
+          value={form.last_contacted_at || ''}
+          onChange={set('last_contacted_at')}
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+        />
+      </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div className="flex justify-end gap-2 pt-2">
         <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">Cancel</button>
@@ -471,6 +482,9 @@ function ClosedLostTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate,
                       {account.competitor && <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-200">{account.competitor}</span>}
                       <span className="text-xs text-gray-400">{account.contacts?.length || 0} contact{account.contacts?.length !== 1 ? 's' : ''}</span>
                       {account.rep_email && <span className="text-xs text-gray-400">· {account.rep_email}</span>}
+                      {account.last_contacted_at
+                        ? <span className="text-xs text-gray-400">· contacted {Math.floor((Date.now() - new Date(account.last_contacted_at)) / (1000 * 60 * 60 * 24))}d ago</span>
+                        : <span className="text-xs text-gray-300">· never contacted</span>}
                     </div>
                   </div>
                   <div className="text-sm text-gray-500 shrink-0 w-24 text-right">{weeks !== null ? `${weeks}w` : '—'}</div>
@@ -581,6 +595,9 @@ function TerritoryTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate, 
                       {account.last_signal_at && (
                         <span className="text-xs text-gray-400">· last signal {Math.floor((Date.now() - new Date(account.last_signal_at)) / (1000 * 60 * 60 * 24))}d ago</span>
                       )}
+                      {account.last_contacted_at
+                        ? <span className="text-xs text-gray-400">· contacted {Math.floor((Date.now() - new Date(account.last_contacted_at)) / (1000 * 60 * 60 * 24))}d ago</span>
+                        : <span className="text-xs text-gray-300">· never contacted</span>}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>

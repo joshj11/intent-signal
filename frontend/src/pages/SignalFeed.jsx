@@ -14,19 +14,21 @@ const TAG_COLORS = { champion: 'green', evaluator: 'blue', blocker: 'red' }
 
 function SignalCard({ signal, onAlert, onIgnore }) {
   const [acting, setAct] = useState(null)
+  const [showNotes, setShowNotes] = useState(false)
+  const [notes, setNotes] = useState('')
   const meta = SIGNAL_TYPES[signal.signal_type] || { label: signal.signal_type, color: 'gray' }
   const account = signal.accounts
   const contact = signal.contacts
-
-  async function act(fn, label) {
-    setAct(label)
-    try { await fn() } finally { setAct(null) }
-  }
 
   const isResolved = signal.alerted || signal.ignored
   const date = new Date(signal.fired_at).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric',
   })
+
+  async function handleAcknowledge() {
+    setAct('alert')
+    try { await onAlert(notes.trim() || null) } finally { setAct(null) }
+  }
 
   return (
     <div className={`bg-white rounded-xl border px-5 py-4 ${isResolved ? 'border-gray-100 opacity-60' : 'border-gray-200'}`}>
@@ -60,26 +62,50 @@ function SignalCard({ signal, onAlert, onIgnore }) {
                 View source
               </a>
             )}
-            {signal.alerted && (
-              <span className="text-xs text-green-600 font-medium">Acknowledged</span>
-            )}
-            {signal.ignored && (
-              <span className="text-xs text-gray-400 font-medium">Ignored</span>
-            )}
+            {signal.alerted && <span className="text-xs text-green-600 font-medium">Acknowledged</span>}
+            {signal.ignored && <span className="text-xs text-gray-400 font-medium">Ignored</span>}
+            {signal.notes && <span className="text-xs text-gray-500 italic">"{signal.notes}"</span>}
           </div>
+
+          {showNotes && (
+            <div className="mt-3 flex gap-2 items-start">
+              <textarea
+                autoFocus
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="What did you do? (optional)"
+                rows={2}
+                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+              />
+              <div className="flex flex-col gap-1.5 shrink-0">
+                <button
+                  onClick={handleAcknowledge}
+                  disabled={!!acting}
+                  className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-xs font-medium hover:bg-gray-700 disabled:opacity-50"
+                >
+                  {acting === 'alert' ? 'Saving...' : 'Confirm'}
+                </button>
+                <button
+                  onClick={() => setShowNotes(false)}
+                  className="px-3 py-1.5 border border-gray-200 text-gray-500 rounded-lg text-xs font-medium hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {!isResolved && (
+        {!isResolved && !showNotes && (
           <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => act(onAlert, 'alert')}
-              disabled={!!acting}
-              className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-xs font-medium hover:bg-gray-700 disabled:opacity-50"
+              onClick={() => setShowNotes(true)}
+              className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-xs font-medium hover:bg-gray-700"
             >
-              {acting === 'alert' ? 'Saving...' : 'Acknowledge'}
+              Acknowledge
             </button>
             <button
-              onClick={() => act(onIgnore, 'ignore')}
+              onClick={() => { setAct('ignore'); onIgnore().finally(() => setAct(null)) }}
               disabled={!!acting}
               className="px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-50 disabled:opacity-50"
             >
@@ -255,10 +281,10 @@ export default function SignalFeed() {
             <SignalCard
               key={signal.id}
               signal={signal}
-              onAlert={async () => {
-                await api.signals.alert(signal.id)
+              onAlert={async (notes) => {
+                await api.signals.alert(signal.id, notes)
                 setSignals((prev) =>
-                  prev.map((s) => s.id === signal.id ? { ...s, alerted: true } : s)
+                  prev.map((s) => s.id === signal.id ? { ...s, alerted: true, notes: notes || s.notes } : s)
                 )
               }}
               onIgnore={async () => {

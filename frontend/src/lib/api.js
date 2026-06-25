@@ -52,7 +52,7 @@ export const api = {
     },
     pendingCount: () => request('/api/signals/pending-count'),
     acknowledgeAll: () => request('/api/signals/acknowledge-all', { method: 'POST' }),
-    alert: (id) => request(`/api/signals/${id}/alert`, { method: 'POST' }),
+    alert: (id, notes) => request(`/api/signals/${id}/alert`, { method: 'POST', body: { notes: notes || null } }),
     ignore: (id) => request(`/api/signals/${id}/ignore`, { method: 'POST' }),
   },
   settings: {

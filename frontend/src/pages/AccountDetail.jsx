@@ -335,6 +335,7 @@ export default function AccountDetail() {
                         )}
                         {signal.alerted && <span className="text-xs text-green-600 font-medium">Acknowledged</span>}
                         {signal.ignored && <span className="text-xs text-gray-400 font-medium">Ignored</span>}
+                        {signal.notes && <span className="text-xs text-gray-500 italic">"{signal.notes}"</span>}
                       </div>
                     </div>
                   </div>

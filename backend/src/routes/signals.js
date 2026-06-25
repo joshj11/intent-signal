@@ -64,9 +64,12 @@ router.post('/:id/alert', async (req, res) => {
     .single()
   if (!check) return res.status(404).json({ error: 'Signal not found' })
 
+  const update = { alerted: true, alerted_at: new Date().toISOString() }
+  if (req.body?.notes !== undefined) update.notes = req.body.notes || null
+
   const { data, error } = await supabase
     .from('signals')
-    .update({ alerted: true, alerted_at: new Date().toISOString() })
+    .update(update)
     .eq('id', req.params.id)
     .select()
     .single()
