@@ -15,18 +15,21 @@ router.get('/pending-count', async (req, res) => {
   res.json({ count })
 })
 
-// GET /api/signals?limit=50&offset=0
+// GET /api/signals?limit=50&offset=0&account_id=uuid
 router.get('/', async (req, res) => {
   const limit = parseInt(req.query.limit) || 50
   const offset = parseInt(req.query.offset) || 0
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('signals')
     .select('*, accounts!inner(name, loss_reason, rep_email), contacts(name, tag)')
     .eq('accounts.user_id', req.user.id)
     .order('fired_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
+  if (req.query.account_id) query = query.eq('account_id', req.query.account_id)
+
+  const { data, error } = await query
   if (error) return res.status(500).json({ error: error.message })
   res.json(data)
 })

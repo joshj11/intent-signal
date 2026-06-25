@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { api } from '../lib/api.js'
-import { CONTACT_TAGS, LOSS_REASON_COLORS } from '../lib/constants.js'
+import { CONTACT_TAGS, LOSS_REASON_COLORS, SIGNAL_TYPES } from '../lib/constants.js'
 import Badge from '../components/Badge.jsx'
 import Modal from '../components/Modal.jsx'
 import EmptyState from '../components/EmptyState.jsx'
@@ -142,6 +142,7 @@ function ContactForm({ accountId, isTerritory, initial, onSave, onClose }) {
 export default function AccountDetail() {
   const { id } = useParams()
   const [account, setAccount] = useState(null)
+  const [signals, setSignals] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
   const [editing, setEditing] = useState(null)
@@ -151,8 +152,12 @@ export default function AccountDetail() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const data = await api.accounts.get(id)
-      setAccount(data)
+      const [accountData, signalData] = await Promise.all([
+        api.accounts.get(id),
+        api.signals.list({ account_id: id, limit: 100 }),
+      ])
+      setAccount(accountData)
+      setSignals(signalData)
     } finally {
       setLoading(false)
     }
@@ -171,6 +176,10 @@ export default function AccountDetail() {
     try {
       const result = await api.accounts.scan(id)
       setAccount((a) => ({ ...a, last_scanned_at: new Date().toISOString() }))
+      if (result.signals_found > 0) {
+        const signalData = await api.signals.list({ account_id: id, limit: 100 })
+        setSignals(signalData)
+      }
       setToast(
         result.signals_found > 0
           ? `Scan complete — ${result.signals_found} new signal${result.signals_found !== 1 ? 's' : ''} found`
@@ -297,6 +306,44 @@ export default function AccountDetail() {
           ))}
         </div>
       )}
+
+      <div className="mt-8">
+        <h2 className="text-base font-medium text-gray-900 mb-4">Signal history</h2>
+        {signals.length === 0 ? (
+          <EmptyState title="No signals yet" description="Run a scan to check for signals on this account." />
+        ) : (
+          <div className="space-y-2">
+            {signals.map((signal) => {
+              const meta = SIGNAL_TYPES[signal.signal_type] || { label: signal.signal_type, color: 'gray' }
+              const date = new Date(signal.fired_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+              return (
+                <div key={signal.id} className={`bg-white rounded-xl border px-5 py-4 ${signal.alerted || signal.ignored ? 'border-gray-100 opacity-60' : 'border-gray-200'}`}>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <Badge label={meta.label} color={meta.color} />
+                        {signal.contacts && (
+                          <span className="text-xs text-gray-400">{signal.contacts.name} · {signal.contacts.tag}</span>
+                        )}
+                      </div>
+                      <p className="text-sm font-medium text-gray-800">{signal.title}</p>
+                      {signal.detail && <p className="text-sm text-gray-500 mt-0.5">{signal.detail}</p>}
+                      <div className="flex items-center gap-3 mt-2">
+                        <span className="text-xs text-gray-400">{date}</span>
+                        {signal.source_url && (
+                          <a href={signal.source_url} target="_blank" rel="noreferrer" className="text-xs text-brand-600 hover:underline">View source</a>
+                        )}
+                        {signal.alerted && <span className="text-xs text-green-600 font-medium">Acknowledged</span>}
+                        {signal.ignored && <span className="text-xs text-gray-400 font-medium">Ignored</span>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
 
       {showAdd && (
         <Modal title="Add contact" onClose={() => setShowAdd(false)}>
