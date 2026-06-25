@@ -103,7 +103,7 @@ export async function checkForAccount(account, { recentSignals = [] } = {}) {
     matched_jobs: matchedJobs,
   })
 
-  if (matchedCount < 2 || matchedCount <= prevCount) return []
+  if (matchedCount === 0 || matchedCount <= prevCount) return []
 
   const roleList = matchedJobs.slice(0, 4).join(', ') + (matchedJobs.length > 4 ? ` +${matchedJobs.length - 4} more` : '')
 
