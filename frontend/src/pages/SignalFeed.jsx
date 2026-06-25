@@ -157,6 +157,12 @@ export default function SignalFeed() {
   useEffect(() => { load() }, [load])
 
   useEffect(() => {
+    if (!scanResult || scanResult.error) return
+    const t = setTimeout(() => setScanResult(null), 6000)
+    return () => clearTimeout(t)
+  }, [scanResult])
+
+  useEffect(() => {
     let pollInterval = null
 
     api.scan.progress().then((p) => {

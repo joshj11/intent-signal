@@ -7,6 +7,7 @@ import * as cheerio from 'cheerio'
 import supabase from '../lib/supabase.js'
 import { shouldAlertForAccount, isDuplicate } from '../lib/alertRules.js'
 import { getDetectorState, setDetectorState } from '../lib/detectorState.js'
+import { getSetting } from '../lib/settingsCache.js'
 import log from '../lib/logger.js'
 
 const SIGNAL_TYPE = 'new_hire'
@@ -26,6 +27,37 @@ const TITLE_KEYWORDS = [
 ]
 
 const JOB_SELECTORS = ['.jobs', '.careers', '.positions', '#jobs', '[data-job]', 'main']
+
+function adzunaBase() {
+  const market = process.env.ADZUNA_MARKET || 'gb'
+  return `https://api.adzuna.com/v1/api/jobs/${market}/search/1`
+}
+
+async function fetchAdzunaEngJobs(account) {
+  const appId = await getSetting('adzuna_app_id') || process.env.ADZUNA_APP_ID
+  const appKey = await getSetting('adzuna_app_key') || process.env.ADZUNA_APP_KEY
+  if (!appId || !appKey) return []
+  try {
+    const res = await axios.get(adzunaBase(), {
+      params: {
+        app_id: appId, app_key: appKey,
+        what_or: TITLE_KEYWORDS.map((kw) => `"${kw}"`).join(' '),
+        title_only: 1,
+        company: account.name,
+        results_per_page: 10,
+        sort_by: 'date',
+      },
+      timeout: 10000,
+    })
+    const results = res.data?.results ?? []
+    const accountLower = account.name.toLowerCase()
+    return results
+      .filter((j) => { const co = j.company?.display_name?.toLowerCase() ?? ''; return co.includes(accountLower) || accountLower.includes(co) })
+      .map((j) => j.title)
+  } catch {
+    return []
+  }
+}
 
 function extractJobTitles($) {
   for (const sel of JOB_SELECTORS) {
@@ -76,19 +108,30 @@ export async function checkForAccount(account, { recentSignals = [] } = {}) {
     tried_at: new Date().toISOString(),
   })
 
-  if (!result) return []
+  let matchedJobs = []
+  let sourceUrl = result?.url ?? null
 
-  const $ = cheerio.load(result.html)
-  const rawTitles = extractJobTitles($)
+  if (result) {
+    const $ = cheerio.load(result.html)
+    const rawTitles = extractJobTitles($)
+    matchedJobs = [
+      ...new Map(
+        rawTitles
+          .filter((t) => t.length > 3 && t.length < 100 && TITLE_KEYWORDS.some((kw) => t.toLowerCase().includes(kw)))
+          .map((t) => [t.toLowerCase().trim(), t.trim()])
+      ).values(),
+    ]
+  }
 
-  // Deduplicate case-insensitively, keep original casing of first occurrence
-  const matchedJobs = [
-    ...new Map(
-      rawTitles
-        .filter((t) => t.length > 3 && t.length < 100 && TITLE_KEYWORDS.some((kw) => t.toLowerCase().includes(kw)))
-        .map((t) => [t.toLowerCase().trim(), t.trim()])
-    ).values(),
-  ]
+  // Adzuna fallback for SPA-rendered careers pages (React/Greenhouse/Lever) where cheerio gets blank HTML
+  if (matchedJobs.length === 0) {
+    const adzunaJobs = await fetchAdzunaEngJobs(account)
+    if (adzunaJobs.length > 0) {
+      matchedJobs = [...new Set(adzunaJobs.map((t) => t.trim()))]
+      if (!sourceUrl && account.domain) sourceUrl = `https://${account.domain}/careers`
+    }
+  }
+
   const matchedCount = matchedJobs.length
 
   // Only fire if matched_count increased vs stored value
@@ -96,8 +139,8 @@ export async function checkForAccount(account, { recentSignals = [] } = {}) {
   const prevCount = state.matched_count ?? 0
 
   await setDetectorState('careers', account.id, {
-    found: true,
-    url: result.url,
+    found: !!result,
+    url: sourceUrl,
     tried_at: new Date().toISOString(),
     matched_count: matchedCount,
     matched_jobs: matchedJobs,
@@ -115,7 +158,7 @@ export async function checkForAccount(account, { recentSignals = [] } = {}) {
         signal_type: SIGNAL_TYPE,
         title: `${account.name} is hiring engineering/product`,
         detail: `Open roles: ${roleList}`,
-        source_url: result.url,
+        source_url: sourceUrl,
         raw_data: { matched_count: matchedCount, matched_jobs: matchedJobs },
       })
       .select()

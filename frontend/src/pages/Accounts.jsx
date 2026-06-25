@@ -363,12 +363,14 @@ function ClosedLostTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate,
   const [search, setSearch] = useState('')
   const [sortByWeeks, setSortByWeeks] = useState(false)
   const [sharedInvestorOnly, setSharedInvestorOnly] = useState(false)
+  const [noContactsOnly, setNoContactsOnly] = useState(false)
   const [selected, setSelected] = useState(new Set())
 
   let filtered = accounts.filter((a) => {
     if (filter !== 'all' && a.loss_reason !== filter) return false
     if (search && !a.name.toLowerCase().includes(search.toLowerCase())) return false
     if (sharedInvestorOnly && !a.has_shared_investor) return false
+    if (noContactsOnly && a.contacts?.length > 0) return false
     return true
   })
 
@@ -408,6 +410,12 @@ function ClosedLostTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate,
           className={`px-3 py-1.5 rounded-lg text-xs font-medium ${sharedInvestorOnly ? 'bg-teal-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
         >
           Shared investor
+        </button>
+        <button
+          onClick={() => setNoContactsOnly((v) => !v)}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium ${noContactsOnly ? 'bg-amber-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+        >
+          No contacts
         </button>
       </div>
 
@@ -461,7 +469,9 @@ function ClosedLostTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate,
                       <Link to={`/accounts/${account.id}`} onClick={(e) => e.stopPropagation()} className="font-medium text-gray-900 hover:text-brand-600 text-sm">
                         {account.name}
                       </Link>
-                      {account.domain && <span className="text-xs text-gray-400">{account.domain}</span>}
+                      {account.domain
+                        ? <span className="text-xs text-gray-400">{account.domain}</span>
+                        : <span className="text-xs text-amber-600">no domain</span>}
                       {dormant && <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-200">dormant</span>}
                       {account.has_shared_investor && (
                         <span title={account.shared_investor_names?.join(', ')} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-teal-50 text-teal-700 ring-1 ring-inset ring-teal-200 cursor-default">Shared investor</span>
@@ -480,6 +490,9 @@ function ClosedLostTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate,
                       }
                       {account.last_contacted_at
                         ? <span className="text-xs text-gray-400">· contacted {Math.floor((Date.now() - new Date(account.last_contacted_at)) / (1000 * 60 * 60 * 24))}d ago</span>
+                        : null}
+                      {account.last_scanned_at
+                        ? <span className="text-xs text-gray-400">· scanned {formatDistanceToNow(new Date(account.last_scanned_at), { addSuffix: true })}</span>
                         : null}
                     </div>
                   </div>
@@ -501,11 +514,13 @@ function ClosedLostTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate,
 function TerritoryTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate, onAdd }) {
   const [search, setSearch] = useState('')
   const [sharedInvestorOnly, setSharedInvestorOnly] = useState(false)
+  const [noContactsOnly, setNoContactsOnly] = useState(false)
   const [selected, setSelected] = useState(new Set())
 
   const filtered = accounts.filter((a) => {
     if (search && !a.name.toLowerCase().includes(search.toLowerCase())) return false
     if (sharedInvestorOnly && !a.has_shared_investor) return false
+    if (noContactsOnly && a.contacts?.length > 0) return false
     return true
   })
 
@@ -535,6 +550,12 @@ function TerritoryTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate, 
           className={`px-3 py-1.5 rounded-lg text-xs font-medium ${sharedInvestorOnly ? 'bg-teal-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
         >
           Shared investor
+        </button>
+        <button
+          onClick={() => setNoContactsOnly((v) => !v)}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium ${noContactsOnly ? 'bg-amber-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+        >
+          No contacts
         </button>
       </div>
 
@@ -578,7 +599,9 @@ function TerritoryTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate, 
                       <Link to={`/accounts/${account.id}`} onClick={(e) => e.stopPropagation()} className="font-medium text-gray-900 hover:text-brand-600 text-sm">
                         {account.name}
                       </Link>
-                      {account.domain && <span className="text-xs text-gray-400">{account.domain}</span>}
+                      {account.domain
+                        ? <span className="text-xs text-gray-400">{account.domain}</span>
+                        : <span className="text-xs text-amber-600">no domain</span>}
                       {dormant && <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-200">dormant</span>}
                       {account.has_shared_investor && (
                         <span title={account.shared_investor_names?.join(', ')} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-teal-50 text-teal-700 ring-1 ring-inset ring-teal-200 cursor-default">Shared investor</span>
@@ -595,6 +618,9 @@ function TerritoryTab({ accounts, onEdit, onDelete, onBulkDelete, onBulkUpdate, 
                       )}
                       {account.last_contacted_at
                         ? <span className="text-xs text-gray-400">· contacted {Math.floor((Date.now() - new Date(account.last_contacted_at)) / (1000 * 60 * 60 * 24))}d ago</span>
+                        : null}
+                      {account.last_scanned_at
+                        ? <span className="text-xs text-gray-400">· scanned {formatDistanceToNow(new Date(account.last_scanned_at), { addSuffix: true })}</span>
                         : null}
                     </div>
                   </div>
