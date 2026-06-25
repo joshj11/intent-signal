@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabaseClient.js'
 
 const navItems = [
+  { to: '/', label: 'Home', end: true },
   { to: '/accounts', label: 'Accounts' },
   { to: '/signals', label: 'Signal Feed' },
   { to: '/investor-prospects', label: 'Investor prospects' },
@@ -23,6 +24,7 @@ export default function Layout() {
               <NavLink
                 key={item.to}
                 to={item.to}
+                end={item.end}
                 className={({ isActive }) =>
                   `px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                     isActive
