@@ -85,7 +85,7 @@ Apply migrations in order from `backend/supabase/` in the Supabase SQL editor (`
 
 ## Signal sources
 
-11 detectors run on a weekly cron (Monday 07:00 UTC) and can also be triggered manually. 8 run in parallel per account; 3 Proxycurl detectors run sequentially to respect credit limits.
+10 detectors run on a weekly cron (Monday 07:00 UTC) and can also be triggered manually. 8 run in parallel per account; 3 Proxycurl detectors run sequentially to respect credit limits.
 
 | Signal | Source | Notes |
 |--------|--------|-------|
@@ -113,4 +113,5 @@ Without a Proxycurl API key, Signal creates a "Check [Name]'s LinkedIn" reminder
 | Endpoint | Body | Description |
 |----------|------|-------------|
 | `POST /api/accounts/:id/scan` | — | Scan a single account |
-| `POST /api/scan/all` | `{ confirm: true, account_type: "closed_lost" \| "territory" \| "all" }` | Scan accounts by type |
+| `POST /api/scan/all` | `{ confirm: true, account_type: "closed_lost" \| "territory" \| "all" }` | Scan accounts by type — returns 409 if a scan is already running |
+| `GET /api/scan/progress` | — | Returns `{ inProgress, current, total, currentAccount }` — poll during a scan for live progress |
