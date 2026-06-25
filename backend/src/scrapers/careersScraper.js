@@ -12,10 +12,14 @@ import log from '../lib/logger.js'
 const SIGNAL_TYPE = 'new_hire'
 const UA = 'Mozilla/5.0 (compatible)'
 
+// Multi-word phrases reduce false positives from titles like "Netsuite Engineer" or "Sales Engineer"
 const TITLE_KEYWORDS = [
-  'engineer', 'developer', 'product manager', 'designer', 'devops',
-  'platform', 'infrastructure', 'data scientist', 'backend', 'frontend',
-  'fullstack', 'full-stack', 'ml', 'machine learning',
+  'software engineer', 'software developer', 'product manager', 'product designer',
+  'devops engineer', 'platform engineer', 'site reliability', 'data engineer',
+  'data scientist', 'backend engineer', 'frontend engineer', 'full stack',
+  'fullstack engineer', 'machine learning', 'ml engineer', 'engineering manager',
+  'head of engineering', 'vp engineering', 'vp of engineering',
+  'infrastructure engineer', 'cloud engineer', 'solutions engineer',
 ]
 
 const JOB_SELECTORS = ['.jobs', '.careers', '.positions', '#jobs', '[data-job]', 'main']
@@ -91,7 +95,7 @@ export async function checkForAccount(account, { recentSignals = [] } = {}) {
     matched_titles: matchedTitles,
   })
 
-  if (matchedCount === 0 || matchedCount <= prevCount) return []
+  if (matchedCount < 2 || matchedCount <= prevCount) return []
 
   try {
     const { data: signal } = await supabase
