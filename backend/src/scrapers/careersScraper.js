@@ -27,16 +27,14 @@ const TITLE_KEYWORDS = [
 
 const JOB_SELECTORS = ['.jobs', '.careers', '.positions', '#jobs', '[data-job]', 'main']
 
-function extractJobText($) {
-  // Try common job board selectors first
+function extractJobTitles($) {
   for (const sel of JOB_SELECTORS) {
     const el = $(sel)
     if (el.length) {
-      return el.find('a, h2, h3, li').map((_, el) => $(el).text()).get().join(' ').toLowerCase()
+      return el.find('a, h2, h3, li').map((_, e) => $(e).text().trim()).get()
     }
   }
-  // Fallback: full body text
-  return $('body').text().toLowerCase()
+  return $('body').find('a, h2, h3, li').map((_, e) => $(e).text().trim()).get()
 }
 
 async function fetchPage(url) {
@@ -81,10 +79,17 @@ export async function checkForAccount(account, { recentSignals = [] } = {}) {
   if (!result) return []
 
   const $ = cheerio.load(result.html)
-  const text = extractJobText($)
+  const rawTitles = extractJobTitles($)
 
-  const matchedTitles = TITLE_KEYWORDS.filter((kw) => text.includes(kw))
-  const matchedCount = matchedTitles.length
+  // Deduplicate case-insensitively, keep original casing of first occurrence
+  const matchedJobs = [
+    ...new Map(
+      rawTitles
+        .filter((t) => t.length > 3 && t.length < 100 && TITLE_KEYWORDS.some((kw) => t.toLowerCase().includes(kw)))
+        .map((t) => [t.toLowerCase().trim(), t.trim()])
+    ).values(),
+  ]
+  const matchedCount = matchedJobs.length
 
   // Only fire if matched_count increased vs stored value
   const state = await getDetectorState('careers', account.id)
@@ -95,10 +100,12 @@ export async function checkForAccount(account, { recentSignals = [] } = {}) {
     url: result.url,
     tried_at: new Date().toISOString(),
     matched_count: matchedCount,
-    matched_titles: matchedTitles,
+    matched_jobs: matchedJobs,
   })
 
   if (matchedCount < 2 || matchedCount <= prevCount) return []
+
+  const roleList = matchedJobs.slice(0, 4).join(', ') + (matchedJobs.length > 4 ? ` +${matchedJobs.length - 4} more` : '')
 
   try {
     const { data: signal } = await supabase
@@ -107,9 +114,9 @@ export async function checkForAccount(account, { recentSignals = [] } = {}) {
         account_id: account.id,
         signal_type: SIGNAL_TYPE,
         title: `${account.name} is hiring engineering/product`,
-        detail: `Open roles detected (${matchedCount} matches): ${matchedTitles.slice(0, 3).join(', ')}`,
+        detail: `Open roles: ${roleList}`,
         source_url: result.url,
-        raw_data: { matched_count: matchedCount, matched_titles: matchedTitles },
+        raw_data: { matched_count: matchedCount, matched_jobs: matchedJobs },
       })
       .select()
       .single()
