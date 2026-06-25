@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 const SETUP_STEPS = [
@@ -39,19 +40,111 @@ const SETUP_STEPS = [
 ]
 
 const SIGNAL_TYPES = [
-  { label: 'Funding Round', description: 'New capital = new budget cycles. A funded account that went dark may now have room to buy.', color: 'bg-green-100 text-green-700' },
-  { label: 'Engineering Hiring', description: 'Active technical hiring signals growth. Scaling teams need tooling to match.', color: 'bg-violet-100 text-violet-700' },
-  { label: 'Champion Job Move', description: 'Your champion carries context to their next role. Their new employer is a warm lead.', color: 'bg-amber-100 text-amber-700' },
-  { label: 'Blocker Departed', description: 'The person who killed the deal has left. The objection may have walked out with them.', color: 'bg-red-100 text-red-700' },
-  { label: 'Competitor Bad Press', description: 'Acquisitions, layoffs, or outages at the tool they chose create a natural re-engagement opening.', color: 'bg-orange-100 text-orange-700' },
-  { label: 'Competitor Sunsetting', description: 'A product being wound down means they urgently need a replacement.', color: 'bg-pink-100 text-pink-700' },
-  { label: 'Conference Attendance', description: 'A contact at an industry event is out of heads-down mode and open to conversation.', color: 'bg-blue-100 text-blue-700' },
-  { label: 'New Economic Buyer', description: 'A new CFO or VP Finance means new budget ownership and fresh buying decisions.', color: 'bg-teal-100 text-teal-700' },
-  { label: 'IPO Filing', description: 'A company filing for IPO is about to need enterprise-grade tooling at scale.', color: 'bg-indigo-100 text-indigo-700' },
-  { label: 'Shared Investor', description: 'A mutual investor can make a warm introduction to a prospect outside your territory.', color: 'bg-teal-100 text-teal-700' },
+  {
+    label: 'Funding Round',
+    description: 'New capital = new budget cycles. A funded account that went dark may now have room to buy.',
+    color: 'bg-green-100 text-green-700',
+    requires: 'Crunchbase API',
+    how: 'On each scan, Signal queries the Crunchbase API for the account\'s domain. If a new funding round has been announced since the last scan, a signal fires. Crunchbase requires a paid plan.',
+  },
+  {
+    label: 'Engineering Hiring',
+    description: 'Active technical hiring signals growth. Scaling teams need tooling to match.',
+    color: 'bg-violet-100 text-violet-700',
+    requires: 'Adzuna API',
+    how: 'Signal searches Adzuna for active engineering job postings at the company. If 3 or more open roles are found, it fires a signal — indicating the team is scaling and likely evaluating new tooling.',
+  },
+  {
+    label: 'Champion Job Move',
+    description: 'Your champion carries context to their next role. Their new employer is a warm lead.',
+    color: 'bg-amber-100 text-amber-700',
+    requires: 'Proxycurl API (or manual)',
+    how: 'For every contact tagged as a champion with a LinkedIn URL, Signal checks their current employer via Proxycurl. If it has changed, a signal fires pointing to their new company. Without Proxycurl, Signal creates a "Check [Name]\'s LinkedIn" reminder every 30 days instead.',
+  },
+  {
+    label: 'Blocker Departed',
+    description: 'The person who killed the deal has left. The objection may have walked out with them.',
+    color: 'bg-red-100 text-red-700',
+    requires: 'Proxycurl API (or manual)',
+    how: 'Same as champion job moves, but for contacts tagged as blockers. If the person who killed the deal has moved on, Signal fires — it\'s often worth reaching back out. Without Proxycurl, you get a manual reminder every 30 days.',
+  },
+  {
+    label: 'Competitor Bad Press',
+    description: 'Acquisitions, layoffs, or outages at the tool they chose create a natural re-engagement opening.',
+    color: 'bg-orange-100 text-orange-700',
+    requires: 'Perigon API',
+    how: 'Signal searches Perigon for recent news articles mentioning the competitor the account uses (e.g. Tableau, Power BI, Looker). Articles containing keywords like "layoffs", "acquisition", "outage", or "shutdown" in the last 7 days trigger a signal. If no specific competitor is set on the account, all Sisense competitors are checked.',
+  },
+  {
+    label: 'Competitor Sunsetting',
+    description: 'A product being wound down means they urgently need a replacement.',
+    color: 'bg-pink-100 text-pink-700',
+    requires: 'Perigon API',
+    how: 'Signal searches Perigon for news about the competitor being discontinued, end-of-lifed, or deprecated. Keywords like "end of life", "discontinue", "sunset", and "deprecated" are used. If matched, it fires a high-priority signal — the account urgently needs an alternative.',
+  },
+  {
+    label: 'Conference Attendance',
+    description: 'A contact at an industry event is out of heads-down mode and open to conversation.',
+    color: 'bg-blue-100 text-blue-700',
+    requires: 'Conference URLs (Settings)',
+    how: 'Signal scrapes the sponsor and attendee pages you add in Settings. It looks for company name matches against your accounts. If found, it fires a signal — conference season is one of the best times to re-engage.',
+  },
+  {
+    label: 'New Economic Buyer',
+    description: 'A new CFO or VP Finance means new budget ownership and fresh buying decisions.',
+    color: 'bg-teal-100 text-teal-700',
+    requires: 'Adzuna API',
+    how: 'Signal searches Adzuna for senior finance and revenue leadership job postings at the company — roles like CFO, VP Finance, Head of Revenue Operations, and Chief Revenue Officer. A new hire in these roles often means budget decisions are being revisited.',
+  },
+  {
+    label: 'IPO Filing',
+    description: 'A company filing for IPO is about to need enterprise-grade tooling at scale.',
+    color: 'bg-indigo-100 text-indigo-700',
+    requires: 'Crunchbase API',
+    how: 'Signal checks Crunchbase for IPO filings associated with the account\'s domain. A company preparing to go public typically undergoes significant operational scaling and is an ideal time to re-engage with an enterprise pitch.',
+  },
+  {
+    label: 'Shared Investor',
+    description: 'A mutual investor can make a warm introduction to a prospect outside your territory.',
+    color: 'bg-teal-100 text-teal-700',
+    requires: 'Crunchbase API',
+    how: 'Signal cross-references a prospect\'s investors (via Crunchbase) against Sisense\'s own investor list. If there\'s an overlap, it surfaces on the Investor Prospects page — that investor can make a warm introduction on your behalf.',
+  },
 ]
 
+function SignalModal({ signal, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-lg leading-none"
+        >
+          ×
+        </button>
+        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium mb-3 ${signal.color}`}>
+          {signal.label}
+        </span>
+        <p className="text-sm text-gray-700 mb-4">{signal.description}</p>
+        <div className="space-y-3">
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">How it works</p>
+            <p className="text-sm text-gray-600 leading-relaxed">{signal.how}</p>
+          </div>
+          <div className="pt-2 border-t border-gray-100">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Requires</p>
+            <p className="text-sm text-gray-600">{signal.requires}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Home() {
+  const [activeSignal, setActiveSignal] = useState(null)
+
   return (
     <div className="max-w-3xl mx-auto space-y-12">
 
@@ -73,13 +166,18 @@ export default function Home() {
 
       {/* What signals does it detect */}
       <div>
-        <h2 className="text-base font-semibold text-gray-900 mb-3">What signals does it detect?</h2>
+        <h2 className="text-base font-semibold text-gray-900 mb-1">What signals does it detect?</h2>
+        <p className="text-sm text-gray-400 mb-3">Click any card to see how it works.</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {SIGNAL_TYPES.map((s) => (
-            <div key={s.label} className="border border-gray-100 rounded-xl p-4">
+            <button
+              key={s.label}
+              onClick={() => setActiveSignal(s)}
+              className="text-left border border-gray-100 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all"
+            >
               <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium mb-2 ${s.color}`}>{s.label}</span>
               <p className="text-sm text-gray-500">{s.description}</p>
-            </div>
+            </button>
           ))}
         </div>
       </div>
@@ -104,6 +202,8 @@ export default function Home() {
           ))}
         </div>
       </div>
+
+      {activeSignal && <SignalModal signal={activeSignal} onClose={() => setActiveSignal(null)} />}
 
     </div>
   )
