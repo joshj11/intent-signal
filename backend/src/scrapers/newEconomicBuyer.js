@@ -13,12 +13,14 @@ const DETECTOR = 'new_economic_buyer'
 const SIGNAL_TYPE = 'new_economic_buyer'
 
 const EXEC_TITLES = [
-  'CFO',
-  'CRO',
-  '"VP Finance"',
-  '"Head of Finance"',
-  '"Chief Financial Officer"',
-  '"Chief Revenue Officer"',
+  'CFO', 'CEO', 'COO', 'CMO', 'CTO', 'CRO', 'CPO',
+  '"VP Finance"', '"Head of Finance"',
+  '"Chief Financial Officer"', '"Chief Revenue Officer"',
+  '"Chief Executive Officer"', '"Chief Operating Officer"',
+  '"Chief Marketing Officer"', '"Chief Technology Officer"',
+  '"Chief Product Officer"',
+  '"VP Marketing"', '"VP Sales"', '"VP Engineering"',
+  '"Head of Sales"', '"Head of Marketing"',
 ]
 
 function adzunaBase() {
