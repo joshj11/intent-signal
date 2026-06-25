@@ -156,6 +156,32 @@ export default function SignalFeed() {
 
   useEffect(() => { load() }, [load])
 
+  useEffect(() => {
+    let pollInterval = null
+
+    api.scan.progress().then((p) => {
+      if (!p.inProgress) return
+      setRunning(true)
+      setProgress(p)
+
+      pollInterval = setInterval(async () => {
+        try {
+          const next = await api.scan.progress()
+          if (next.inProgress) {
+            setProgress(next)
+          } else {
+            clearInterval(pollInterval)
+            setRunning(false)
+            setProgress(null)
+            load()
+          }
+        } catch {}
+      }, 2000)
+    }).catch(() => {})
+
+    return () => clearInterval(pollInterval)
+  }, [])
+
   async function handleScan(accountType) {
     setShowScanModal(false)
     setRunning(true)
