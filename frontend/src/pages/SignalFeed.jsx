@@ -120,6 +120,17 @@ function SignalCard({ signal, onAlert, onIgnore }) {
   )
 }
 
+function timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  const days = Math.floor(hrs / 24)
+  return `${days}d ago`
+}
+
 export default function SignalFeed() {
   const [signals, setSignals] = useState([])
   const [loading, setLoading] = useState(true)
@@ -130,12 +141,14 @@ export default function SignalFeed() {
   const [scanResult, setScanResult] = useState(null)
   const [filter, setFilter] = useState('pending')
   const [search, setSearch] = useState('')
+  const [lastScan, setLastScan] = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const data = await api.signals.list()
+      const [data, runs] = await Promise.all([api.signals.list(), api.scan.runs(1)])
       setSignals(data)
+      setLastScan(runs[0] ?? null)
     } finally {
       setLoading(false)
     }
@@ -212,6 +225,9 @@ export default function SignalFeed() {
           <h1 className="text-xl font-semibold text-gray-900">Signal Feed</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {pendingCount} pending signal{pendingCount !== 1 ? 's' : ''}
+            {lastScan && (
+              <span className="text-gray-400"> · Last scan {timeAgo(lastScan.ran_at)}</span>
+            )}
           </p>
         </div>
         <div className="flex flex-col items-end gap-1">
@@ -275,7 +291,7 @@ export default function SignalFeed() {
       ) : filtered.length === 0 ? (
         <EmptyState
           title={filter === 'pending' ? 'No pending signals' : 'No signals'}
-          description={filter === 'pending' ? 'Run a scan or wait for the daily cron to pick up new signals.' : undefined}
+          description={filter === 'pending' ? 'Run a scan to check for new signals.' : undefined}
         />
       ) : (
         <div className="space-y-2">

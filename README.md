@@ -85,7 +85,7 @@ Apply migrations in order from `backend/supabase/` in the Supabase SQL editor (`
 
 ## Signal sources
 
-10 detectors run on a weekly cron (Monday 07:00 UTC) and can also be triggered manually. 8 run in parallel per account; 3 Proxycurl detectors run sequentially to respect credit limits.
+10 detectors run on demand — triggered manually from the Signal Feed or per-account page. 8 run in parallel per account; 3 Proxycurl detectors run sequentially to respect credit limits.
 
 | Signal | Source | Notes |
 |--------|--------|-------|

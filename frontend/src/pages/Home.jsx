@@ -26,7 +26,7 @@ const SETUP_STEPS = [
   {
     number: '4',
     title: 'Run your first scan',
-    description: 'Trigger a scan from the Signal Feed or Accounts page. Scans also run automatically every Monday at 7am UTC.',
+    description: 'Trigger a scan from the Signal Feed or Accounts page whenever you want to check for new signals.',
     cta: 'Go to Signal Feed',
     href: '/signals',
   },

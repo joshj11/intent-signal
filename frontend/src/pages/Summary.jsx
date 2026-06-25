@@ -4,7 +4,7 @@ const SIGNALS = [
     name: 'Funding Round',
     color: 'green',
     source: 'Crunchbase',
-    cadence: 'Weekly (Mon)',
+    cadence: 'On demand',
     why: 'New capital means new budget cycles. A funded company that went dark on cost grounds may now have room to buy.',
   },
   {
@@ -12,7 +12,7 @@ const SIGNALS = [
     name: 'IPO Filing',
     color: 'green',
     source: 'Crunchbase',
-    cadence: 'Weekly (Mon)',
+    cadence: 'On demand',
     why: 'IPO prep unlocks large pre-listing budgets and drives a wave of software purchasing to look investor-ready.',
   },
   {
@@ -20,7 +20,7 @@ const SIGNALS = [
     name: 'Engineering / Product Hiring',
     color: 'violet',
     source: 'Careers page + Adzuna',
-    cadence: 'Weekly (Mon)',
+    cadence: 'On demand',
     why: 'Active technical hiring signals growth and investment. Teams scaling up often need the tooling to match.',
   },
   {
@@ -28,7 +28,7 @@ const SIGNALS = [
     name: 'New Economic Buyer Hired',
     color: 'violet',
     source: 'Adzuna',
-    cadence: 'Weekly (Mon)',
+    cadence: 'On demand',
     why: 'A new CFO, CRO, or VP Finance brings fresh priorities and a mandate to evaluate the stack.',
   },
   {
@@ -36,7 +36,7 @@ const SIGNALS = [
     name: 'Conference Attendance',
     color: 'blue',
     source: 'Conference sites',
-    cadence: 'Weekly (Mon)',
+    cadence: 'On demand',
     why: 'A contact showing up at an industry event is out of heads-down mode and open to conversation.',
   },
   {
@@ -44,7 +44,7 @@ const SIGNALS = [
     name: 'Champion Job Move',
     color: 'amber',
     source: 'Proxycurl (LinkedIn)',
-    cadence: 'Weekly (Mon)',
+    cadence: 'On demand',
     why: 'Your champion carries context and goodwill to their next role. Their new employer is a warm lead.',
   },
   {
@@ -52,7 +52,7 @@ const SIGNALS = [
     name: 'Blocker Left Company',
     color: 'red',
     source: 'Proxycurl (LinkedIn)',
-    cadence: 'Weekly (Mon)',
+    cadence: 'On demand',
     why: 'The person who killed the deal is gone. The objection may have walked out with them.',
   },
   {
@@ -60,7 +60,7 @@ const SIGNALS = [
     name: 'Competitor Negative Press',
     color: 'orange',
     source: 'Perigon',
-    cadence: 'Weekly (Mon)',
+    cadence: 'On demand',
     why: 'Acquisitions, layoffs, pricing hikes, and outages at the competitor create a natural opening to re-engage.',
   },
   {
@@ -68,7 +68,7 @@ const SIGNALS = [
     name: 'Competitor Product Sunset',
     color: 'red',
     source: 'Perigon',
-    cadence: 'Weekly (Mon)',
+    cadence: 'On demand',
     why: 'End-of-life announcements force customers to find a replacement. Act before they evaluate the wrong alternative.',
   },
   {
@@ -76,7 +76,7 @@ const SIGNALS = [
     name: 'Shared Investor',
     color: 'teal',
     source: 'Crunchbase',
-    cadence: 'Weekly (Mon)',
+    cadence: 'On demand',
     why: 'A mutual investor can make a warm introduction to a prospect. Surfaces on the Investor Prospects page.',
   },
 ]
@@ -168,7 +168,7 @@ export default function Summary() {
 
       <Section
         title="Signal detectors"
-        description="10 detectors run every Monday at 7am UTC and can also be triggered manually. Each fires at most once per account every 30 days."
+        description="10 detectors run on demand — trigger a scan from the Signal Feed or any account page. Each fires at most once per account every 30 days."
       >
         <div className="space-y-2">
           {SIGNALS.map((s) => (
