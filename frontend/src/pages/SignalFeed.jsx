@@ -96,6 +96,7 @@ export default function SignalFeed() {
   const [signals, setSignals] = useState([])
   const [loading, setLoading] = useState(true)
   const [running, setRunning] = useState(false)
+  const [acknowledging, setAcknowledging] = useState(false)
   const [showScanModal, setShowScanModal] = useState(false)
   const [scanResult, setScanResult] = useState(null)
   const [filter, setFilter] = useState('pending')
@@ -149,6 +150,16 @@ export default function SignalFeed() {
 
   const pendingCount = signals.filter((s) => !s.alerted && !s.ignored).length
 
+  async function handleAcknowledgeAll() {
+    setAcknowledging(true)
+    try {
+      await api.signals.acknowledgeAll()
+      setSignals((prev) => prev.map((s) => (!s.alerted && !s.ignored ? { ...s, alerted: true } : s)))
+    } finally {
+      setAcknowledging(false)
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -175,16 +186,27 @@ export default function SignalFeed() {
         </button>
       </div>
 
-      <div className="flex gap-1 mb-4">
-        {[['pending', 'Pending'], ['alerted', 'Acknowledged'], ['ignored', 'Ignored'], ['all', 'All']].map(([v, l]) => (
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex gap-1">
+          {[['pending', 'Pending'], ['alerted', 'Acknowledged'], ['ignored', 'Ignored'], ['all', 'All']].map(([v, l]) => (
+            <button
+              key={v}
+              onClick={() => setFilter(v)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium ${filter === v ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
+        {filter === 'pending' && pendingCount > 0 && (
           <button
-            key={v}
-            onClick={() => setFilter(v)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium ${filter === v ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+            onClick={handleAcknowledgeAll}
+            disabled={acknowledging}
+            className="px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-50 disabled:opacity-50"
           >
-            {l}
+            {acknowledging ? 'Acknowledging...' : `Acknowledge all (${pendingCount})`}
           </button>
-        ))}
+        )}
       </div>
 
       {loading ? (

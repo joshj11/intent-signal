@@ -31,6 +31,26 @@ router.get('/', async (req, res) => {
   res.json(data)
 })
 
+// POST /api/signals/acknowledge-all — mark all pending signals as acknowledged
+router.post('/acknowledge-all', async (req, res) => {
+  const { data: pending, error: fetchErr } = await supabase
+    .from('signals')
+    .select('id, accounts!inner(user_id)')
+    .eq('accounts.user_id', req.user.id)
+    .eq('alerted', false)
+    .eq('ignored', false)
+  if (fetchErr) return res.status(500).json({ error: fetchErr.message })
+  if (!pending?.length) return res.json({ updated: 0 })
+
+  const ids = pending.map((s) => s.id)
+  const { error: updateErr } = await supabase
+    .from('signals')
+    .update({ alerted: true, alerted_at: new Date().toISOString() })
+    .in('id', ids)
+  if (updateErr) return res.status(500).json({ error: updateErr.message })
+  res.json({ updated: ids.length })
+})
+
 // POST /api/signals/:id/alert — mark signal as acknowledged
 router.post('/:id/alert', async (req, res) => {
   const { data: check } = await supabase

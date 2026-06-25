@@ -51,6 +51,7 @@ export const api = {
       return request(`/api/signals${qs ? `?${qs}` : ''}`)
     },
     pendingCount: () => request('/api/signals/pending-count'),
+    acknowledgeAll: () => request('/api/signals/acknowledge-all', { method: 'POST' }),
     alert: (id) => request(`/api/signals/${id}/alert`, { method: 'POST' }),
     ignore: (id) => request(`/api/signals/${id}/ignore`, { method: 'POST' }),
   },
